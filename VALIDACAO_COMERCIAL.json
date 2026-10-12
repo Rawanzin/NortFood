@@ -1,0 +1,72 @@
+{
+  "date": "2026-10-12",
+  "decision": "NO-GO",
+  "branch": "codex/commercial-mvp-20261012",
+  "syntax": {
+    "result": "passed",
+    "command": "node --check app.js"
+  },
+  "build": {
+    "configuredSupabase": false,
+    "result": "passed",
+    "command": "node scripts/build.cjs"
+  },
+  "automated": {
+    "failed": 0,
+    "database": "PGlite PostgreSQL, test Auth/Storage schemas",
+    "tests": 26,
+    "command": "node --test tests/database.test.cjs tests/commercial.test.cjs tests/ui-contract.test.cjs",
+    "browser": "Chrome headless; commercial UI transport fixtures",
+    "passed": 26
+  },
+  "demo": {
+    "widths": [
+      320,
+      360,
+      390,
+      430,
+      768,
+      1365
+    ],
+    "assertions": 107,
+    "result": "passed",
+    "command": "node tests/flows.cjs"
+  },
+  "localServer": {
+    "result": "passed using existing scripts/serve.cjs process",
+    "note": "Second server launch failed because port 4173 already occupied; existing server verified without stopping it.",
+    "paths": {
+      "/supabase/config.toml": 404,
+      "/src/backend.js": 404,
+      "/scripts/build.cjs": 404,
+      "/config.js": 200,
+      "/": 200,
+      "/.env": 404
+    }
+  },
+  "whitespace": {
+    "result": "passed; only LF/CRLF warnings",
+    "command": "git diff --check"
+  },
+  "liveSupabase": {
+    "reason": "No Supabase project or credentials; user requested local configuration and tests",
+    "result": "NOT EXECUTED"
+  },
+  "notVerified": [
+    "Hosted Auth/PostgREST/RLS/Realtime",
+    "SMTP confirmation and recovery",
+    "Edge upload deployment and image decoding/quotas",
+    "Two physical devices and real network failures",
+    "Production HTTPS/security headers",
+    "Backup restore",
+    "Physical GPS and sound"
+  ],
+  "hashes": {
+    "supabase/migrations/202610120003_storage_realtime.sql": "908452C011520E2589CF32B7E93687084CD0250849831D13B4B0C9B095B57D79",
+    "supabase/migrations/202610120001_foundation.sql": "2363B2547FE1557278F091F29DFB0A9E250707BAFE6C39237BB8264FAF54EFDE",
+    "assets/nortfood-backend.js": "61878469F6E950D9F70984881491D79F3A455963047C42E6B98C75208D31C54B",
+    "supabase/migrations/202610120002_operations.sql": "5F89D1882FAF7B2A9E4691D80327DA7FC4E0B6521C69CEACC2C75D05E34B1736",
+    "app.js": "89E240F7DD7FD8A314787108F622197142E1E3A307ED4A911A3F9D47ECA46AAB",
+    "supabase/migrations/202610120004_reporting.sql": "98B52D644672A96F9C82E3761FE4994EF89F2E50CB22B1B4C41B7F43C43800A3"
+  }
+}

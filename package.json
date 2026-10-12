@@ -1,0 +1,21 @@
+{
+  "name": "nortfood",
+  "private": true,
+  "version": "0.2.0",
+  "scripts": {
+    "start": "node scripts/serve.cjs",
+    "build": "node scripts/build.cjs",
+    "test": "node --test tests/database.test.cjs tests/commercial.test.cjs tests/ui-contract.test.cjs",
+    "test:demo": "node tests/flows.cjs",
+    "test:live": "node tests/supabase-live.cjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.117.3"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "esbuild": "0.28.2",
+    "playwright": "1.64.0"
+  },
+  "packageManager": "pnpm@11.25.0"
+}
