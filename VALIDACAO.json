@@ -1,0 +1,509 @@
+{
+  "date": "2026-10-11",
+  "browser": "Chrome headless via Playwright",
+  "checks": [
+    "Login inválido mostra erro",
+    "Senhas legadas derivadas; sem texto puro no armazenamento",
+    "Sessão persistida contém apenas identificador",
+    "Total do produto acompanha quantidade",
+    "Produto e observação persistem",
+    "Troca de loja solicita confirmação",
+    "Cancelar troca preserva carrinho",
+    "Confirmar troca mantém um estabelecimento",
+    "Revisão exibe os itens",
+    "Pedido com endereço manual calcula total e limpa carrinho",
+    "Acompanhamento de entrega mostra estados",
+    "Confirmação identifica pedido local",
+    "Cadastro de estabelecimento entra no painel",
+    "Cadastro de produto salva adicionais",
+    "Fechar loja persiste estado manual",
+    "Adicionais entram no total por unidade",
+    "Retirada usa endereço da loja e entrega zero",
+    "Retirada não altera endereço do cliente",
+    "Estabelecimento conclui retirada sem simular entrega",
+    "Atualizações registram horários reais locais",
+    "Filtro de concluídos seleciona pedidos certos",
+    "Avaliação de pedido concluído persiste",
+    "Conversa existente continua funcional e local",
+    "Favoritos têm tela acessível",
+    "Avaliações aparecem no perfil público local",
+    "Sobre apresenta informações cadastradas",
+    "Galeria vazia sem imagens inventadas",
+    "Busca retorna produtos específicos",
+    "Busca de ajuda filtra perguntas",
+    "Botão Voltar do navegador retorna à tela anterior",
+    "Favoritos não aparecem em outra conta",
+    "Pedidos não aparecem em outra conta",
+    "Link direto impede exibição do pedido de outra conta",
+    "Sem overflow: home em 320px",
+    "Sem overflow: search em 320px",
+    "Sem overflow: favorites em 320px",
+    "Sem overflow: offers em 320px",
+    "Sem overflow: help em 320px",
+    "Sem overflow: addresses em 320px",
+    "Sem overflow: orders em 320px",
+    "Sem overflow: settings em 320px",
+    "Sem overflow: notifications em 320px",
+    "Sem overflow: conversations em 320px",
+    "Sem overflow: home em 390px",
+    "Sem overflow: search em 390px",
+    "Sem overflow: favorites em 390px",
+    "Sem overflow: offers em 390px",
+    "Sem overflow: help em 390px",
+    "Sem overflow: addresses em 390px",
+    "Sem overflow: orders em 390px",
+    "Sem overflow: settings em 390px",
+    "Sem overflow: notifications em 390px",
+    "Sem overflow: conversations em 390px",
+    "Sem overflow: home em 768px",
+    "Sem overflow: search em 768px",
+    "Sem overflow: favorites em 768px",
+    "Sem overflow: offers em 768px",
+    "Sem overflow: help em 768px",
+    "Sem overflow: addresses em 768px",
+    "Sem overflow: orders em 768px",
+    "Sem overflow: settings em 768px",
+    "Sem overflow: notifications em 768px",
+    "Sem overflow: conversations em 768px",
+    "Sem overflow: home em 1365px",
+    "Sem overflow: search em 1365px",
+    "Sem overflow: favorites em 1365px",
+    "Sem overflow: offers em 1365px",
+    "Sem overflow: help em 1365px",
+    "Sem overflow: addresses em 1365px",
+    "Sem overflow: orders em 1365px",
+    "Sem overflow: settings em 1365px",
+    "Sem overflow: notifications em 1365px",
+    "Sem overflow: conversations em 1365px",
+    "Favoritar produto preserva seleção no modal",
+    "Escape fecha modal",
+    "Modal adapta-se a 320px",
+    "Notificações locais continuam disponíveis",
+    "Marcar notificações como lidas funciona",
+    "Recarregar preserva busca",
+    "Recarregar preserva ordenação",
+    "Voltar retorna à home sem percorrer cada letra digitada",
+    "Clique fora fecha modal",
+    "Link de compartilhamento abre rota de loja",
+    "Painel orders sem overflow 320",
+    "Painel products sem overflow 320",
+    "Painel settings sem overflow 320",
+    "Painel sales sem overflow 320",
+    "Painel orders sem overflow 390",
+    "Painel products sem overflow 390",
+    "Painel settings sem overflow 390",
+    "Painel sales sem overflow 390",
+    "Painel orders sem overflow 768",
+    "Painel products sem overflow 768",
+    "Painel settings sem overflow 768",
+    "Painel sales sem overflow 768",
+    "Painel orders sem overflow 1365",
+    "Painel products sem overflow 1365",
+    "Painel settings sem overflow 1365",
+    "Painel sales sem overflow 1365"
+  ],
+  "errors": [],
+  "responsive": [
+    {
+      "route": "home",
+      "width": 320,
+      "w": 320,
+      "html": 320,
+      "body": 320
+    },
+    {
+      "route": "search",
+      "width": 320,
+      "w": 320,
+      "html": 320,
+      "body": 320
+    },
+    {
+      "route": "favorites",
+      "width": 320,
+      "w": 320,
+      "html": 320,
+      "body": 320
+    },
+    {
+      "route": "offers",
+      "width": 320,
+      "w": 320,
+      "html": 320,
+      "body": 320
+    },
+    {
+      "route": "help",
+      "width": 320,
+      "w": 320,
+      "html": 320,
+      "body": 320
+    },
+    {
+      "route": "addresses",
+      "width": 320,
+      "w": 320,
+      "html": 320,
+      "body": 320
+    },
+    {
+      "route": "orders",
+      "width": 320,
+      "w": 320,
+      "html": 320,
+      "body": 320
+    },
+    {
+      "route": "settings",
+      "width": 320,
+      "w": 320,
+      "html": 320,
+      "body": 320
+    },
+    {
+      "route": "notifications",
+      "width": 320,
+      "w": 320,
+      "html": 320,
+      "body": 320
+    },
+    {
+      "route": "conversations",
+      "width": 320,
+      "w": 320,
+      "html": 320,
+      "body": 320
+    },
+    {
+      "route": "home",
+      "width": 390,
+      "w": 390,
+      "html": 390,
+      "body": 390
+    },
+    {
+      "route": "search",
+      "width": 390,
+      "w": 390,
+      "html": 390,
+      "body": 390
+    },
+    {
+      "route": "favorites",
+      "width": 390,
+      "w": 390,
+      "html": 390,
+      "body": 390
+    },
+    {
+      "route": "offers",
+      "width": 390,
+      "w": 390,
+      "html": 390,
+      "body": 390
+    },
+    {
+      "route": "help",
+      "width": 390,
+      "w": 390,
+      "html": 390,
+      "body": 390
+    },
+    {
+      "route": "addresses",
+      "width": 390,
+      "w": 390,
+      "html": 390,
+      "body": 390
+    },
+    {
+      "route": "orders",
+      "width": 390,
+      "w": 390,
+      "html": 390,
+      "body": 390
+    },
+    {
+      "route": "settings",
+      "width": 390,
+      "w": 390,
+      "html": 390,
+      "body": 390
+    },
+    {
+      "route": "notifications",
+      "width": 390,
+      "w": 390,
+      "html": 390,
+      "body": 390
+    },
+    {
+      "route": "conversations",
+      "width": 390,
+      "w": 390,
+      "html": 390,
+      "body": 390
+    },
+    {
+      "route": "home",
+      "width": 768,
+      "w": 768,
+      "html": 768,
+      "body": 768
+    },
+    {
+      "route": "search",
+      "width": 768,
+      "w": 768,
+      "html": 768,
+      "body": 768
+    },
+    {
+      "route": "favorites",
+      "width": 768,
+      "w": 768,
+      "html": 768,
+      "body": 768
+    },
+    {
+      "route": "offers",
+      "width": 768,
+      "w": 768,
+      "html": 768,
+      "body": 768
+    },
+    {
+      "route": "help",
+      "width": 768,
+      "w": 768,
+      "html": 768,
+      "body": 768
+    },
+    {
+      "route": "addresses",
+      "width": 768,
+      "w": 768,
+      "html": 768,
+      "body": 768
+    },
+    {
+      "route": "orders",
+      "width": 768,
+      "w": 768,
+      "html": 768,
+      "body": 768
+    },
+    {
+      "route": "settings",
+      "width": 768,
+      "w": 768,
+      "html": 768,
+      "body": 768
+    },
+    {
+      "route": "notifications",
+      "width": 768,
+      "w": 768,
+      "html": 768,
+      "body": 768
+    },
+    {
+      "route": "conversations",
+      "width": 768,
+      "w": 768,
+      "html": 768,
+      "body": 768
+    },
+    {
+      "route": "home",
+      "width": 1365,
+      "w": 1365,
+      "html": 1365,
+      "body": 1365
+    },
+    {
+      "route": "search",
+      "width": 1365,
+      "w": 1365,
+      "html": 1365,
+      "body": 1365
+    },
+    {
+      "route": "favorites",
+      "width": 1365,
+      "w": 1365,
+      "html": 1365,
+      "body": 1365
+    },
+    {
+      "route": "offers",
+      "width": 1365,
+      "w": 1365,
+      "html": 1365,
+      "body": 1365
+    },
+    {
+      "route": "help",
+      "width": 1365,
+      "w": 1365,
+      "html": 1365,
+      "body": 1365
+    },
+    {
+      "route": "addresses",
+      "width": 1365,
+      "w": 1365,
+      "html": 1365,
+      "body": 1365
+    },
+    {
+      "route": "orders",
+      "width": 1365,
+      "w": 1365,
+      "html": 1365,
+      "body": 1365
+    },
+    {
+      "route": "settings",
+      "width": 1365,
+      "w": 1365,
+      "html": 1365,
+      "body": 1365
+    },
+    {
+      "route": "notifications",
+      "width": 1365,
+      "w": 1365,
+      "html": 1365,
+      "body": 1365
+    },
+    {
+      "route": "conversations",
+      "width": 1365,
+      "w": 1365,
+      "html": 1365,
+      "body": 1365
+    }
+  ],
+  "sellerResponsive": [
+    {
+      "width": 320,
+      "tab": "orders",
+      "html": 320,
+      "body": 320,
+      "w": 320
+    },
+    {
+      "width": 320,
+      "tab": "products",
+      "html": 320,
+      "body": 320,
+      "w": 320
+    },
+    {
+      "width": 320,
+      "tab": "settings",
+      "html": 320,
+      "body": 320,
+      "w": 320
+    },
+    {
+      "width": 320,
+      "tab": "sales",
+      "html": 320,
+      "body": 320,
+      "w": 320
+    },
+    {
+      "width": 390,
+      "tab": "orders",
+      "html": 390,
+      "body": 390,
+      "w": 390
+    },
+    {
+      "width": 390,
+      "tab": "products",
+      "html": 390,
+      "body": 390,
+      "w": 390
+    },
+    {
+      "width": 390,
+      "tab": "settings",
+      "html": 390,
+      "body": 390,
+      "w": 390
+    },
+    {
+      "width": 390,
+      "tab": "sales",
+      "html": 390,
+      "body": 390,
+      "w": 390
+    },
+    {
+      "width": 768,
+      "tab": "orders",
+      "html": 768,
+      "body": 768,
+      "w": 768
+    },
+    {
+      "width": 768,
+      "tab": "products",
+      "html": 768,
+      "body": 768,
+      "w": 768
+    },
+    {
+      "width": 768,
+      "tab": "settings",
+      "html": 768,
+      "body": 768,
+      "w": 768
+    },
+    {
+      "width": 768,
+      "tab": "sales",
+      "html": 768,
+      "body": 768,
+      "w": 768
+    },
+    {
+      "width": 1365,
+      "tab": "orders",
+      "html": 1365,
+      "body": 1365,
+      "w": 1365
+    },
+    {
+      "width": 1365,
+      "tab": "products",
+      "html": 1365,
+      "body": 1365,
+      "w": 1365
+    },
+    {
+      "width": 1365,
+      "tab": "settings",
+      "html": 1365,
+      "body": 1365,
+      "w": 1365
+    },
+    {
+      "width": 1365,
+      "tab": "sales",
+      "html": 1365,
+      "body": 1365,
+      "w": 1365
+    }
+  ],
+  "note": "Dados de teste em contexto isolado. GPS físico, serviços de pagamento, OTP/push e dispositivos físicos não testados.",
+  "automated": {
+    "command": "node tests/flows.cjs",
+    "assertions": 79,
+    "result": "passed",
+    "javascriptErrors": 0
+  }
+}
