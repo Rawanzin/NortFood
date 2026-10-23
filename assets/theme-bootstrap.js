@@ -1,1 +1,0 @@
-(()=>{let theme='light';try{theme=localStorage.getItem('nortfood-theme')==='dark'?'dark':'light'}catch{}document.documentElement.dataset.theme=theme;document.documentElement.style.colorScheme=theme})();

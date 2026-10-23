@@ -1,4 +1,10 @@
+**Homologacao atualizada em 19/10/2026:** upload-media implantada, historico 001-007 conciliado sem reaplicacao e restauracao isolada realizada com limitacao do Vault. Resultado: **PARCIAL / NO-GO para beta publico**, pendentes dominio HTTPS, SMTP e fluxos autenticados reais. Consulte o [relatorio atual](BETA_20261019.md). As afirmacoes anteriores abaixo sao historicas.
+
+**Atualização de 19/10/2026:** backup validado e migrações **002 → 003 → 004 → 005 → 006 → 007 aplicadas e conferidas no Supabase remoto**. Não repetir a 001 nem as demais. Consulte o [resultado e pendências](RESULTADO_SUPABASE_20261019.md). O piloto permanece desabilitado; upload e fluxos autenticados completos ainda precisam de homologação. Os registros datados abaixo são históricos.
+
 # Roteiro eliminatório do piloto
+
+Atualização de 15/10: projeto novo e 001 aplicada informados pelo responsável. Executar as restantes na ordem 002 → 003 → 004 → 005. Comissão agora vence sete dias após completed_at. Além dos testes abaixo, validar cadastro/remoção de localização com GPS permitido/negado e pino manual, rota Google Maps e snapshot antigo de retirada após mudança da loja, cursor composto com timestamps iguais e upload com conteúdo inválido. Os serviços reais não foram testados pelo agente; o upload ainda exige decodificação completa, quotas e implantação/validação da função.
 
 Não executado externamente. Sem projeto Supabase, SMTP, HTTPS e autorização comercial, o resultado permanece **NO-GO**.
 

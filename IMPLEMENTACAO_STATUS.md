@@ -1,4 +1,17 @@
+## Modernização arquitetural — 21/10/2026
+
+Alterações locais na branch `codex/modernizacao-arquitetural-20261021`, preservando o projeto e o estado anterior. Sincronização por identidade, checkout idempotente, persistência tolerante a falhas, mídias isoladas por sessão, módulos de aplicação/apresentação, demo isolada, build por estágio e PWA com atualização controlada. O tema claro e as funcionalidades existentes foram mantidos.
+
+Consulte o [resultado desta entrega](docs/MODERNIZACAO_RESULTADO_20261021.md), o [diagnóstico inicial](docs/MODERNIZACAO_DIAGNOSTICO_20261021.md), a [organização dos módulos](src/README.md) e o [procedimento de implantação/reversão](docs/MODERNIZACAO_IMPLANTACAO_REVERSAO.md). O esquema/histórico/RLS reais da homologação foram comparados ao repositório; 64 tabelas do dump foram restauradas em cluster local, com limitações gerenciadas documentadas. **A missão integral e o lançamento permanecem pendentes** de testes autenticados da versão resultante, e-mail externo, hospedagem operacional, recuperação operacional completa e validação física. Nenhum dado de produção foi alterado nem migração reaplicada. Registros anteriores abaixo são históricos.
+
+**Homologacao atualizada em 19/10/2026:** upload-media implantada, historico 001-007 conciliado sem reaplicacao e restauracao isolada realizada com limitacao do Vault. Resultado: **PARCIAL / NO-GO para beta publico**, pendentes dominio HTTPS, SMTP e fluxos autenticados reais. Consulte o [relatorio atual](docs/BETA_20261019.md). As afirmacoes anteriores abaixo sao historicas.
+
+**Atualização de 19/10/2026:** backup validado e migrações **002 → 003 → 004 → 005 → 006 → 007 aplicadas e conferidas no Supabase remoto**. Não repetir a 001 nem as demais. Consulte o [resultado e pendências](docs/RESULTADO_SUPABASE_20261019.md). O piloto permanece desabilitado; upload e fluxos autenticados completos ainda precisam de homologação. Os registros datados abaixo são históricos.
+
 # Implementação comercial — 12/10/2026
+
+## Atualização de 15/10/2026
+O responsável confirmou que existe projeto Supabase novo e que 001 foi aplicada. Não repetir 001. Restantes: 002 → 003 → 004 → 202610150005_store_location.sql. Vencimento definido: completed_at + 7 dias. Histórico com cursor composto por data e UUID. Localização fixa integrada ao painel, loja pública e snapshots de retirada. Relatório atual: docs/LOCALIZACAO_E_MIGRACOES.md. O conteúdo abaixo é histórico. Nenhum comando remoto foi executado pelo agente. Operação comercial continua NO-GO até validação real e pendências operacionais.
 
 Estado inicial preservado na branch codex/commercial-mvp-20261012. Cópia integral dos arquivos anteriores (sem .git) e diff em %TEMP%/nortfood-recovery-20261012. Nenhum arquivo antigo dos ZIPs será restaurado sobre código atual.
 

@@ -1,0 +1,3 @@
+// Gate de CONFIGURACAO, nunca declara aprovacao dos fluxos ou do lancamento.
+const {publicConfig}=require('./public-config.cjs');
+try{const c=publicConfig(true),issues=[];if(!c.supabaseUrl||!c.publishableKey)issues.push('SUPABASE_PUBLIC_CONFIGURATION_MISSING');if(!c.appUrl)issues.push('PUBLIC_HTTPS_URL_PENDING');else{const u=new URL(c.appUrl);if(u.protocol!=='https:'||['localhost','127.0.0.1','[::1]'].includes(u.hostname))issues.push('PUBLIC_HTTPS_URL_PENDING');}console.log(JSON.stringify({scope:'Configuracao publica apenas; nao substitui homologacao SMTP/Auth/Storage/Realtime/pedidos',status:issues.length?'NO_GO':'CONFIGURATION_ONLY_PASSED',issues},null,2));if(issues.length)process.exitCode=2;}catch(e){console.error(e.message);process.exitCode=1;}

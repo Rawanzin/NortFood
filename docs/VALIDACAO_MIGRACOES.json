@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-12",
+  "result": "PASSED_LOCAL_CONDITIONAL_REMOTE_PREFLIGHT",
+  "command": "node --test tests/database.test.cjs tests/migrations-audit.test.cjs tests/commercial.test.cjs tests/ui-contract.test.cjs",
+  "tests": 39,
+  "passed": 39,
+  "failed": 0,
+  "filesStableDuringTests": true,
+  "hashes": {
+    "202610120004_reporting.sql": "7C703E46FE62DD5E4D4CE4EB2E7AE8A70A3E7F2A030B7ED42F66A69CE63B51F7",
+    "202610120001_foundation.sql": "AD69B835FCF6575BD9DA1CE627A5EC8241AA45704D617A2531B139E5CF75FB16",
+    "202610120002_operations.sql": "02C36786E5C15521805128B08C4A31C42C4608E4E2EC365AE3B3D5B11E9979E0",
+    "202610120003_storage_realtime.sql": "D9DB1F449B201DEA36884987908B492BA017CA7ACE4AF77A742081AA2613DDD1"
+  },
+  "foundationExecutedAsMigration": false,
+  "foundationFixture": "Declarative tables/functions/policies in disposable PGlite only",
+  "remoteAccess": false,
+  "notVerified": [
+    "Hosted SQL Editor ownership/supautils",
+    "Actual Auth/PostgREST",
+    "Storage service and upload Edge function",
+    "Realtime delivery between identities",
+    "Concurrent connections/races",
+    "Hosted bucket/publication state"
+  ],
+  "order": [
+    "202610120002_operations.sql",
+    "202610120003_storage_realtime.sql",
+    "202610120004_reporting.sql"
+  ]
+}

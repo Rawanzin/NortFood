@@ -1,10 +1,12 @@
--- NortFood: schema aditivo para projeto Supabase novo. Não importa contas/dados demonstrativos.
+-- NortFood: additive diagram for Supabase novo project. No matter demonstrative counts/data.
 begin;
 revoke create on schema public from public,anon,authenticated;
 create schema if not exists private;
 revoke all on schema private from public;
 grant usage on schema private to anon, authenticated;
 create table private.admin_users(user_id uuid primary key references auth.users(id), created_at timestamptz not null default now());
+revoke all privileges on table private.admin_users from public,anon,authenticated;
+alter table private.admin_users enable row level security;
 create table public.profiles(id uuid primary key references auth.users(id), name text not null check(length(trim(name)) between 1 and 80), phone text not null default '', notifications_enabled boolean not null default true, terms_accepted_at timestamptz,terms_version text, created_at timestamptz not null default now());
 create table public.stores(
  id uuid primary key default gen_random_uuid(), name text not null check(length(trim(name)) between 1 and 80), description text not null default '', phone text not null default '', whatsapp text not null default '',

@@ -1,0 +1,53 @@
+{
+  "artifactType": "offline-planning-only",
+  "remoteCampaignCreated": false,
+  "publicationAuthorized": false,
+  "billingAuthorized": false,
+  "brand": "NortFood",
+  "country": "BR",
+  "currency": "BRL",
+  "timeZone": "America/Sao_Paulo",
+  "finalUrl": null,
+  "dailyBudget": null,
+  "status": "PENDING_OWNER_BUDGET_DOMAIN_AND_2FA",
+  "campaignDraft": {
+    "name": "NortFood | Pesquisa | Porteirinha",
+    "network": "SEARCH",
+    "searchPartners": false,
+    "displayNetwork": false,
+    "location": "Porteirinha, Minas Gerais, Brasil",
+    "locationOption": "PRESENCE",
+    "locationCriterionId": null,
+    "languages": ["pt"],
+    "adGroups": [
+      {
+        "name": "Marca",
+        "phraseKeywords": ["nortfood", "nortfood porteirinha"]
+      },
+      {
+        "name": "Delivery local",
+        "phraseKeywords": ["delivery porteirinha", "pedir comida porteirinha"]
+      }
+    ],
+    "negativeKeywordCandidates": ["vaga", "emprego", "receita", "curso"],
+    "responsiveAdDraft": {
+      "headlines": ["NortFood em Porteirinha", "Encontre Cardápios Locais"],
+      "descriptions": [
+        "Conheça estabelecimentos de Porteirinha e consulte seus cardápios.",
+        "Entrega e pagamento conforme as opções oferecidas por cada loja."
+      ]
+    }
+  },
+  "conversionDrafts": [
+    {
+      "event": "sign_up",
+      "status": "NOT_CONFIGURED",
+      "condition": "Conta realmente criada pelo Auth; sem identificadores pessoais enviados ao Google."
+    },
+    {
+      "event": "purchase",
+      "status": "NOT_CONFIGURED",
+      "condition": "Somente pedido real confirmado no servidor, deduplicado; nao implica pagamento bancario processado pelo NortFood."
+    }
+  ]
+}

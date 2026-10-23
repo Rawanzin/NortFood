@@ -1,12 +1,34 @@
-## Estado atual — 12/10/2026
+## Modernização arquitetural — 21/10/2026
+
+Alterações locais na branch `codex/modernizacao-arquitetural-20261021`, preservando o projeto e o estado anterior. Sincronização por identidade, checkout idempotente, persistência tolerante a falhas, mídias isoladas por sessão, módulos de aplicação/apresentação, demo isolada, build por estágio e PWA com atualização controlada. O tema claro e as funcionalidades existentes foram mantidos.
+
+Consulte o [resultado desta entrega](docs/MODERNIZACAO_RESULTADO_20261021.md), o [diagnóstico inicial](docs/MODERNIZACAO_DIAGNOSTICO_20261021.md), a [organização dos módulos](src/README.md) e o [procedimento de implantação/reversão](docs/MODERNIZACAO_IMPLANTACAO_REVERSAO.md). O esquema/histórico/RLS reais da homologação foram comparados ao repositório; 64 tabelas do dump foram restauradas em cluster local, com limitações gerenciadas documentadas. **A missão integral e o lançamento permanecem pendentes** de testes autenticados da versão resultante, e-mail externo, hospedagem operacional, recuperação operacional completa e validação física. Nenhum dado de produção foi alterado nem migração reaplicada. Registros anteriores abaixo são históricos.
+
+## Acesso local correto — 21/10/2026
+
+Abra **Iniciar-NortFood.cmd** ou execute `pnpm dev` / `pnpm start:homologation` e utilize **http://localhost:4174**. O iniciador usa exclusivamente `.env.homologacao`, valida o serviço Auth e reutiliza uma instância já configurada. Não abre múltiplos servidores nem altera o banco principal. Mantenha a janela do servidor aberta durante o uso.
+
+**Não abra index.html por file:// e não publique a pasta original.** O navegador não carrega `.env`: o servidor fornece `/config.js` com os campos públicos, e o build gera esse arquivo para hospedagem. O `config.js` da raiz é um placeholder bloqueado intencionalmente. A entrada por arquivo agora informa como abrir o ambiente correto. `pnpm start` mantém sua função anterior e lê `.env` na porta 4173; não é o comando de homologação.
+
+Detalhes e evidências da correção: [cadastro e configuração](docs/CORRECAO_CADASTRO_20261021.md). Relatórios abaixo são históricos; não repetir migrações já aplicadas.
+
+**Homologacao atualizada em 19/10/2026:** upload-media implantada, historico 001-007 conciliado sem reaplicacao e restauracao isolada realizada com limitacao do Vault. Resultado: **PARCIAL / NO-GO para beta publico**, pendentes dominio HTTPS, SMTP e fluxos autenticados reais. Consulte o [relatorio atual](docs/BETA_20261019.md). As afirmacoes anteriores abaixo sao historicas.
+
+**Atualização de 19/10/2026:** backup validado e migrações **002 → 003 → 004 → 005 → 006 → 007 aplicadas e conferidas no Supabase remoto**. Não repetir a 001 nem as demais. Consulte o [resultado e pendências](docs/RESULTADO_SUPABASE_20261019.md). O piloto permanece desabilitado; upload e fluxos autenticados completos ainda precisam de homologação. Os registros datados abaixo são históricos.
+
+## Atualização — 15/10/2026
+
+Localização fixa da loja, Google Maps para retirada, vencimento em sete dias e histórico com cursor composto implementados localmente. A 001 já foi aplicada pelo responsável; ordem restante: **002 → 003 → 004 → 005**. Consulte [relatório desta etapa](docs/LOCALIZACAO_E_MIGRACOES.md). Nenhum comando remoto foi executado pelo agente. Marketplace permanece **NO-GO** até os testes e ajustes operacionais. As seções anteriores preservadas abaixo são registros históricos.
+
+## Annual status — 12/10/2026
 
 **NO-GO para lançamento.** Consulte [IMPLEMENTACAO_STATUS.md](IMPLEMENTACAO_STATUS.md), [RELATORIO_COMERCIAL.md](RELATORIO_COMERCIAL.md), [configuração e publicação](docs/CONFIGURACAO_E_PUBLICACAO.md) e [piloto](docs/PILOTO.md). Nenhum projeto Supabase/hospedagem foi criado. As seções de 11/10 abaixo descrevem o protótipo local preservado; não são aprovação comercial.
 
-Comandos atuais: pnpm install --frozen-lockfile; pnpm build; pnpm start; pnpm test; pnpm test:demo. A configuração pública é lida de .env e filtrada por scripts/public-config.cjs; somente carrinho temporário usa armazenamento local no modo comercial. Auth é do provedor. O banco usa UUIDs, centavos, RLS e RPCs. Novos pedidos também exigem habilitação administrativa do piloto no servidor.
+    "window.confirmSaveUntitledWorkspace": false,pnpm build; pnpm start; pnpm test; pnpm test:demo. A configuração pública é lida de .env e filtrada por scripts/public-config.cjs; somente carrinho temporário usa armazenamento local no modo comercial. Auth é do provedor. O banco usa UUIDs, centavos, RLS e RPCs. Novos pedidos também exigem habilitação administrativa do piloto no servidor.
 
 # NortFood
 
-Marketplace em evolução comercial, preservando HTML, CSS e JavaScript. O modo padrão utiliza Supabase e bloqueia operações enquanto não estiver configurado. O protótipo anterior continua disponível apenas em localhost com ?demo=1. Sirva esta pasta em localhost ou HTTPS para disponibilizar Web Crypto e os fluxos de conta. A página também pode ser aberta por `index.html` quando o navegador oferecer um contexto seguro para arquivos locais.
+Marketplace em evolução comercial, preservando HTML, CSS e JavaScript. O modo padrão utiliza Supabase e bloqueia operações enquanto não estiver configurado. O protótipo anterior continua disponível apenas em localhost com ?demo=1. Sirva esta pasta em localhost ou HTTPS para disponibilizar Web Crypto e os fluxos de conta. A autenticação deve ser aberta pelo servidor HTTP local ou pelo endereço HTTPS publicado; file:// não carrega a configuração.
 
 ## Funcionalidades do protótipo preservado (?demo=1)
 

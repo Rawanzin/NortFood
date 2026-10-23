@@ -1,4 +1,22 @@
+## Entrada e configuração vigentes — 21/10/2026
+
+Para homologação, abra `Iniciar-NortFood.cmd` ou execute `pnpm dev` / `pnpm start:homologation`. Use **http://localhost:4174**. O servidor injeta somente URL/chave pública da `.env.homologacao` em `/config.js`; validação de Auth não habilita pedidos. O iniciador reutiliza a instância correta, recusa a porta de outro projeto e não encerra processos existentes.
+
+Abrir `file:///.../index.html` não é um ambiente suportado para cadastro: não há servidor para carregar as variáveis. A raiz mantém um `config.js` vazio intencionalmente. Não copiar segredos para corrigir esse arquivo. A documentação antiga de arquivo local abaixo não deve orientar autenticação.
+
+Hospedagem estática deve receber somente a pasta gerada pelo build. `.env` não é lido pelo navegador ou pela Hostinger. O build agora falha antes de escrever arquivos se URL/chave pública estiverem ausentes. Netlify com integração Git usa variáveis no ambiente de build; Netlify Drop/Hostinger recebem o `config.js` gerado no pacote. Não enviar ambientes/servidores/chaves privadas. Builds de homologação continuam separados dos do principal.
+
+`pnpm start` continua lendo `.env` na porta 4173; não usá-lo para criar dados sintéticos no principal. Retornos Auth usam a origem raiz autorizada, sem `#settings`, pois o fragmento é reservado ao retorno de autenticação. SMTP de captura não entrega e-mail externo. [Relatório atual](CORRECAO_CADASTRO_20261021.md).
+
+Os procedimentos datados abaixo são históricos e não autorizam reaplicar 001–007.
+
+**Homologacao atualizada em 19/10/2026:** upload-media implantada, historico 001-007 conciliado sem reaplicacao e restauracao isolada realizada com limitacao do Vault. Resultado: **PARCIAL / NO-GO para beta publico**, pendentes dominio HTTPS, SMTP e fluxos autenticados reais. Consulte o [relatorio atual](BETA_20261019.md). As afirmacoes anteriores abaixo sao historicas.
+
+**Atualização de 19/10/2026:** backup validado e migrações **002 → 003 → 004 → 005 → 006 → 007 aplicadas e conferidas no Supabase remoto**. Não repetir a 001 nem as demais. Consulte o [resultado e pendências](RESULTADO_SUPABASE_20261019.md). O piloto permanece desabilitado; upload e fluxos autenticados completos ainda precisam de homologação. Os registros datados abaixo são históricos.
+
 # Configuração e publicação do NortFood
+
+**15/10/2026, projeto atual:** a 001 já foi aplicada pelo responsável; não repetir. Aplicar somente **002 → 003 → 004 → 005**, conforme [LOCALIZACAO_E_MIGRACOES.md](LOCALIZACAO_E_MIGRACOES.md). Nenhum comando remoto foi executado pelo agente. O relato de ausência de projeto abaixo é histórico, de 12/10. Auth, upload, Realtime e operação real ainda precisam de validação no serviço.
 
 Estado em 12/10/2026: **NO-GO**. Nenhuma conta de serviço, banco remoto, domínio ou publicação foi criada. Comece em um projeto de testes novo. Não use produção neste procedimento inicial.
 
@@ -16,7 +34,7 @@ npx.cmd pnpm@11.25.0 start
 ```
 
 5. Abra `http://localhost:4173`. Sem configuração, a mensagem de Supabase pendente e o bloqueio de pedidos são esperados. Nenhuma loja de demonstração deve aparecer.
-6. Para conferir apenas a interface antiga, abra `http://localhost:4173/?demo=1`. Essa demonstração é permitida somente em localhost/arquivo local. Ela não é uma operação comercial. Contas e pedidos dessa página não serão importados.
+6. Para conferir apenas a interface antiga, abra `http://localhost:4173/?demo=1`. Essa demonstração é permitida somente em localhost. Ela não é uma operação comercial. Contas e pedidos dessa página não serão importados.
 
 ## 2. Criar o ambiente Supabase de TESTES
 
@@ -27,10 +45,10 @@ npx.cmd pnpm@11.25.0 start
 5. Abra **SQL Editor**, opção identificada na [documentação do banco](https://supabase.com/docs/guides/database/overview). Crie uma consulta e copie o conteúdo completo de cada arquivo abaixo. Clique em executar, um arquivo por vez, nesta ordem:
 
 ```text
-supabase/migrations/202610120001_foundation.sql
 supabase/migrations/202610120002_operations.sql
 supabase/migrations/202610120003_storage_realtime.sql
 supabase/migrations/202610120004_reporting.sql
+supabase/migrations/202610150005_store_location.sql
 ```
 
 6. Cada arquivo contém sua própria transação. Se aparecer um erro, pare e preserve a mensagem. Não tente resolver apagando tabelas. Não reaplique uma migração já executada. O procedimento manual deve ser registrado com data, arquivo e operador; ao usar CLI posteriormente, concilie o histórico de migrações antes de um `db push`.
@@ -59,9 +77,9 @@ O build e o servidor exportam apenas quatro campos públicos. As variáveis de s
 
 ## 4. Configurar confirmação de e-mail e recuperação
 
-1. No projeto, abra a área **Authentication**. Nas configurações de URLs, informe o endereço de teste (`http://localhost:4173`) e autorize o retorno para `http://localhost:4173/#settings`.
+1. No projeto, abra a área **Authentication**. Nas configurações de URLs, informe o endereço de teste (`http://localhost:4173`) e autorize o retorno para `http://localhost:4173`.
 2. Mantenha confirmação de e-mail e confirmação dupla de mudança de e-mail. Configure senha mínima de 12 caracteres e proteções do provedor disponíveis no plano.
-3. Configure SMTP próprio em **Authentication settings**, seguindo [a documentação atual de SMTP](https://supabase.com/docs/guides/auth/auth-smtp). Credenciais SMTP ficam no painel do provedor, nunca no frontend.
+3. Configure SMTP próprio em **Authentication settings**, seguindo [a preparação do NortFood](SMTP.md) e a [documentação atual de SMTP](https://supabase.com/docs/guides/auth/auth-smtp). Credenciais SMTP ficam na configuração protegida do Supabase, nunca no frontend. O responsável ainda não possui provedor; envio real permanece pendente.
 4. Faça um cadastro de teste, confirme pelo e-mail e entre. Use Recuperar acesso e confira o e-mail recebido. Após o retorno, abra Configurações > Alterar senha para definir uma senha nova. A recuperação não exige a senha esquecida na interface.
 5. Não declare confirmação/recuperação funcionando até realizar esses passos. O SMTP padrão possui restrições e não é indicado pelo Supabase para produção.
 
@@ -136,6 +154,13 @@ Sem configuração, esse comando informa NÃO EXECUTADO e encerra com código 2.
 
 Código: ponto inicial em `%TEMP%/nortfood-recovery-20261012/workspace-before.zip` e diff `changes-before.patch`; branch `codex/commercial-mvp-20261012`. Preserve essa cópia. Não use reset destrutivo.
 
-Banco: confira o plano e a política efetiva em [Backups Supabase](https://supabase.com/docs/guides/platform/backups). O projeto não tem banco contratado nem restauração verificada. Backups de banco não substituem cópias dos objetos Storage. Antes do piloto, faça uma exportação/backup, restaure em outro ambiente isolado e confira contas, pedidos, eventos, itens, mensagens e ledger; registre evidências e tempos. Não restaurar por cima de produção sem autorização e plano.
+Banco: confira o plano e a política efetiva em [Backups Supabase](https://supabase.com/docs/guides/platform/backups). O estado histórico foi atualizado: existe Supabase principal e homologação separados; backup e restauração PostgreSQL isolada parcial estão documentados em `BETA_20261019.md`, com limites dos serviços gerenciados. Consulte `FINALIZACAO_BETA_20261020.md` antes de executar procedimentos. Backups de banco não substituem cópias dos objetos Storage. Antes do piloto, faça uma exportação/backup, restaure em outro ambiente isolado e confira contas, pedidos, eventos, itens, mensagens e ledger; registre evidências e tempos. Não restaurar por cima de produção sem autorização e plano.
 
 Rollback: bloquear novos pedidos pelo administrador; restaurar a versão anterior do frontend compatível com o banco; preservar pedidos já registrados; corrigir o esquema por migração aditiva. Não apagar tabelas, histórico financeiro ou usuários para voltar uma versão. Retenção e procedimentos de exclusão precisam de definição jurídica.
+
+
+## Estado consolidado em 20/10/2026
+
+A homologação real já comprovou recortes de login/pedidos/chat/Realtime/upload; não repetir etapas aprovadas sem necessidade. Não reaplicar 001–007. O responsável manteve administração pendente; não conceder cargos automaticamente. E-mail e demais limites estão no [relatório final](FINALIZACAO_BETA_20261020.md). Preview continua sem publicação e sem domínio definido.
+
+Indexação é opt-in por `NORTFOOD_ENABLE_INDEXING=yes`, somente com origem HTTPS válida. GA4 é opcional, exige Measurement ID e confirmação de medição automática desativada (`NORTFOOD_GA4_AUTOMATIC_MEASUREMENT_DISABLED=yes`); sem isso não habilitar coleta. Consentimento precede SDK; não enviar PII, query ou fragmentos. As variáveis públicas não recebem chaves secretas.

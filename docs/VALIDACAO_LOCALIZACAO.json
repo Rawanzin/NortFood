@@ -1,0 +1,72 @@
+{
+  "date": "2026-10-15",
+  "remoteAccess": false,
+  "foundationModified": false,
+  "foundationExpectedSHA256": "AD69B835FCF6575BD9DA1CE627A5EC8241AA45704D617A2531B139E5CF75FB16",
+  "migrationOrder": [
+    "202610120002_operations.sql",
+    "202610120003_storage_realtime.sql",
+    "202610120004_reporting.sql",
+    "202610150005_store_location.sql"
+  ],
+  "tests": {
+    "command": "node --test tests/database.test.cjs tests/migrations-audit.test.cjs tests/location-finance.test.cjs tests/store-location.test.cjs tests/commercial.test.cjs tests/ui-contract.test.cjs",
+    "total": 49,
+    "browser": "Chrome headless, real Leaflet 1.9.4 with SHA256/SRI verification; local synthetic tiles and controlled GPS/API fixtures",
+    "passed": 49,
+    "database": "PGlite PostgreSQL WASM; isolated Auth/Storage fixtures; full 001-005 applied only to temporary local database",
+    "failed": 0
+  },
+  "demo": {
+    "javascriptErrors": 0,
+    "command": "node tests/flows.cjs",
+    "assertions": 107,
+    "result": "passed"
+  },
+  "syntax": {
+    "files": [
+      "app.js",
+      "assets/store-location.js",
+      "src/commercial.js",
+      "src/compatibility.js"
+    ],
+    "result": "passed"
+  },
+  "build": {
+    "command": "node scripts/build.cjs",
+    "deployed": false,
+    "result": "passed"
+  },
+  "whitespace": {
+    "generatedBundle": "SDK multiline string literals contain trailing whitespace; preserved without manual rewriting",
+    "sources": "passed"
+  },
+  "notVerified": [
+    "Hosted Supabase Auth/PostgREST/Storage/Realtime/Edge/SMTP",
+    "PostgreSQL concurrent independent connections; only queued attempts tested",
+    "Physical GPS and Google Maps app handoff",
+    "Live OSM street tiles under deployed CSP/HTTPS",
+    "Production backup restore and operational/legal readiness"
+  ],
+  "upload": "partial; signature check only, needs full decoding/dimension limits/body limit/quotas/rate limits and real service validation",
+  "verdict": {
+    "map": "implemented and locally tested, needs migrations/frontend publication and physical service checks",
+    "migrations": "ready locally for stated new remote context, application not performed",
+    "marketplace": "NO-GO"
+  },
+  "hashes": {
+    "src/compatibility.js": "3D90A521658A4732098683915395D6B04D68C75AFC9FA41C4DC7C7541E82A9B1",
+    "assets/store-location.js": "0042350EC090C9BD5DD196EFCF00D3FA59697B849F05E19B155BDDF8D80F20E8",
+    "_headers": "B7D1A7AC1F4FCAF6A6D781C5BD397F1FCC703CD3C73599C8CE10951C375021F9",
+    "refinements.css": "C57881EF2013C598FB3B1E2B533C056BC6DCE6E29BFD89EA8354570250D16BE1",
+    "assets/nortfood-backend.js": "D19CCAC4E68A1CA5DAFDCEB6869B26499B2C02F7DE6270E75A23BFF2B838352D",
+    "index.html": "4E9771384F8AB45CF5E40DB7FCF1DBB936E91CFE151B42171E31E6813A6F2557",
+    "supabase/migrations/202610120004_reporting.sql": "50F0472ED6C9DAC86AD0FDFCEA7F0F90002ECB0425B287FD6282FF9CA589AF8E",
+    "supabase/migrations/202610120003_storage_realtime.sql": "D9DB1F449B201DEA36884987908B492BA017CA7ACE4AF77A742081AA2613DDD1",
+    "supabase/migrations/202610120001_foundation.sql": "AD69B835FCF6575BD9DA1CE627A5EC8241AA45704D617A2531B139E5CF75FB16",
+    "supabase/migrations/202610150005_store_location.sql": "034C8AECCC1296B9D94E0F1960B698E32EEF04FB4660AFF729EF692200E68F79",
+    "supabase/migrations/202610120002_operations.sql": "7CBF05BCB93B71B6965AB1EC363D539F282558273F1A0283B3FECAF392397BE7",
+    "src/commercial.js": "2FD9CE3B14D1100F26B0289ED52C4B0EE77120F5A626B69529CB42F63DE2693E",
+    "app.js": "05A5A2B3FAB78FC62905401A2EDB9C8415130A3DDF0C3A5BF1648BCB80D386A3"
+  }
+}

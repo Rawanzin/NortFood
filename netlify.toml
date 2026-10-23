@@ -3,3 +3,11 @@ command = "pnpm build"
 publish = "dist"
 [build.environment]
 NODE_VERSION = "24"
+
+[context.deploy-preview.environment]
+NORTFOOD_ENABLE_INDEXING = "no"
+NORTFOOD_GA4_MEASUREMENT_ID = ""
+
+[context.branch-deploy.environment]
+NORTFOOD_ENABLE_INDEXING = "no"
+NORTFOOD_GA4_MEASUREMENT_ID = ""

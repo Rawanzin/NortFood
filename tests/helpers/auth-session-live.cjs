@@ -1,0 +1,16 @@
+// Execucao explicita com conta comum sintetica; credenciais somente em memoria.
+const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=require('node:path');
+async function run(account,{executablePath}={}){
+ assert.match(account.email,/^nortfood-smtp-[a-z0-9]+@example\.test$/);const c=require('../../scripts/homologation-config.cjs').configuration();assert.equal(c.url,'https://zrczgghucwsaxqnyaapk.supabase.co');
+ const origin='http://localhost:4174',config=await(await fetch(origin+'/config.js')).text();assert.ok(config.includes(c.url));assert.ok(!config.includes('zwkhqahivthzivmuirjr'));
+ const browser=await chromium.launch({...(executablePath?{executablePath}:{channel:'chrome'}),headless:true}),report={scope:'Interface local, SDK real e Supabase remoto isolado; sem mocks',status:'REPROVADA',checks:[],target:new URL(c.url).hostname};let context;
+ try{
+  context=await browser.newContext({viewport:{width:390,height:844}});let page=await context.newPage();await page.goto(origin);await page.locator('[data-action=auth]').first().click();await page.locator('[data-auth-mode=login]').click();await page.locator('#auth-email').fill(account.email);await page.locator('#auth-password').fill(account.password);await page.locator('.auth-submit').click();await page.locator('.modal').waitFor({state:'hidden'});await page.locator('[data-view=profile]').first().waitFor();
+  assert.equal(await page.evaluate(async()=>{const r=await window.NortFoodBackend.client.auth.getUser();return r.data.user?.id;}),account.id);report.checks.push('Login real fecha modal e associa a identidade correta');
+  await page.reload();await page.locator('[data-view=profile]').first().waitFor();assert.equal(await page.locator('#auth-form').count(),0);report.checks.push('Sessao valida sobrevive ao reload sem formulario de login');
+  const state=await context.storageState();await context.close();context=await browser.newContext({storageState:state,viewport:{width:1365,height:900}});page=await context.newPage();await page.goto(origin);await page.locator('[data-view=profile]').first().waitFor();assert.equal(await page.evaluate(async()=>{const r=await window.NortFoodBackend.client.auth.getUser();return r.data.user?.id;}),account.id);report.checks.push('Novo contexto de navegador recupera sessao SDK persistida, sem reenviar senha');
+  await page.locator('[data-nav=profile]').click();await page.locator('[data-view=settings]').first().click();await page.locator('[data-action=logout]').first().click();await page.locator('[data-action=auth]').first().waitFor();await page.reload();await page.locator('[data-action=auth]').first().waitFor();assert.equal(await page.evaluate(async()=>{const r=await window.NortFoodBackend.client.auth.getSession();return r.data.session;}),null);report.checks.push('Logout real remove sessao e permanece encerrado apos reload');report.status='APROVADA';
+ }finally{await context?.close();await browser.close();await fs.mkdir(path.resolve(__dirname,'../../test-results/auth-ui'),{recursive:true});await fs.writeFile(path.resolve(__dirname,'../../test-results/auth-ui/session-live.json'),JSON.stringify(report,null,2));}
+ return report;
+}
+module.exports={run};
