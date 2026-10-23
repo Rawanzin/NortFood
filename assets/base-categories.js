@@ -8,9 +8,9 @@ const entries = [
  ['ice-cream','Sorvetes','categoria-sorvetes.webp',['sorvete','sorvetes']],
  ['meals','Marmitas','categoria-refeicoes.webp',['marmita','marmitas']],
  ['drinks','Bebidas','categoria-bebidas.webp',['bebidas']],
- ['bakery','Padarias','../category-icons/bread.png',['padaria','padarias']],
+ ['bakery','Padarias','categoria-salgados.webp',['padaria','padarias']],
  ['markets','Mercados','categoria-todos.webp',['mercado','mercados']],
- ['other','Outros','../category-icons/all-foods.png',['outros']]
+ ['other','Outros','categoria-todos.webp',['outros']]
 ];
 const normalize = value => String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 export function categoryKey(value){const key=normalize(value);return entries.find(row=>row[3].includes(key))?.[0]||key;}
@@ -19,6 +19,6 @@ export function mergeCategories(rows=[]){
  const result=[{id:'all',label:'Todos',asset:'assets/optimized/categoria-todos.webp'},...baseCategories.map(base=>{
   const row=rows.find(row=>categoryKey(row.name)===base.key);return {...base,id:row?.id||base.id};
  })];
- for(const row of rows)if(!baseCategories.some(base=>base.key===categoryKey(row.name)))result.push({id:row.id,label:row.name,asset:'assets/category-icons/all-foods.png'});
+ for(const row of rows)if(!baseCategories.some(base=>base.key===categoryKey(row.name)))result.push({id:row.id,label:row.name,asset:'assets/optimized/categoria-todos.webp'});
  return result;
 }
