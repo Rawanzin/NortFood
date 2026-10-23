@@ -14,7 +14,7 @@ async function main(){
  const manifest=JSON.parse(await run('manifest','/manifest.webmanifest',200,(r,s)=>r.headers.get('content-type')?.includes('manifest+json')));
  results.push({name:'standalone_manifest',passed:manifest.name==='NortFood'&&manifest.display==='standalone'&&manifest.id==='/'&&manifest.scope==='/'});
  for(const icon of manifest.icons){const r=await fetch(new URL(icon.src,origin));const b=Buffer.from(await r.arrayBuffer());results.push({name:'icon_'+icon.sizes+'_'+icon.purpose,passed:r.status===200&&b.subarray(1,4).toString()==='PNG'&&icon.sizes===b.readUInt32BE(16)+'x'+b.readUInt32BE(20)});}
- for(const path of ['/app.js','/styles.css','/refinements.css','/pwa.js','/offline.html','/assets/nortfood-backend.js','/assets/nortfood-og.png','/robots.txt','/sitemap.xml','/release.json'])await run('asset:'+path,path,200);
+ for(const path of ['/app.js','/styles.css','/refinements.css','/theme.js','/theme.css','/pwa.js','/offline.html','/assets/nortfood-backend.js','/assets/nortfood-og.png','/robots.txt','/sitemap.xml','/release.json'])await run('asset:'+path,path,200);
  for(const path of ['/.env','/.env.homologacao','/.git/config','/src/backend.js','/supabase/config.toml','/docs/PILOTO.md','/backups/test.sql','/nonexistent-launch-route'])await run('private_or_missing:'+path,path,404);
  const headers={apikey:config.publishableKey};
  for(const [name,route,expected,validate] of [

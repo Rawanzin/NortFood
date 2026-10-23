@@ -1,0 +1,22 @@
+/* Official image variants are selected in theme.js; logos/photos never receive color filters. */
+:root { --page:#fbfbfa; --surface:#fff; --field:#f4f5f5; --soft:#fff4f4; }
+.theme-toggle { width:44px; height:44px; flex:0 0 44px; font-size:22px; line-height:1; color:var(--ink); }
+html[data-theme="dark"] { color-scheme:dark; --page:#18191c; --surface:#24262b; --field:#2d3036; --ink:#f3f3f4; --muted:#b9bdc5; --line:#41454d; --wash:#2d3036; --soft:#3b242a; --red:#f16973; --green:#6bc9a2; --shadow:0 8px 24px #0003; }
+html[data-theme="light"] { color-scheme:light; }
+html[data-theme="dark"] body { background:var(--page); }
+html[data-theme="dark"] .header { background:#18191cf2; }
+html[data-theme="dark"] :is(.category,.store-card,.product,.history-card,.seller-order-card,.dash-card,.modal,.drawer,.drawer-head,.drawer-foot,.nf-dock,.pill,.btn.outline,.menu-nav button,.switch,.switch button,.faq-item,.profile-card,.address-card,.cart-item,.shop-tabs,.shop-tabs button,.discovery-product,.connection-banner,.banner-controls,.site-consent-dialog,.site-consent-banner,.auth-google,.table-context,.store-location-card,.store-location-editor) { background:var(--surface); color:var(--ink); border-color:var(--line); }
+html[data-theme="dark"] :is(.section-head h2,.wrap>h1,.store-title,.profile-head,.view-title,.drawer-head,.modal h2,.stat strong,.table,.auth-heading,.legal-page,.store-location-card h2) { color:var(--ink); }
+html[data-theme="dark"] :is(input:not([type=checkbox]):not([type=radio]),select,textarea,.search input,.field input,.field select,.field textarea,.form>label>input,.form>label>select,.form>label>textarea) { background:var(--field); color:var(--ink); border-color:var(--line); }
+html[data-theme="dark"] :is(.search input:focus,.menu-nav button.active,.category.active,.pill.active,.switch button.active,.shop-tabs button.active,.btn.soft,.check-chip input:checked+span) { background:var(--soft); color:#ff9aa2; border-color:var(--red); }
+html[data-theme="dark"] :is(.section-sub,.field label,.form>label,.store-meta,.store-hero p,.product p,.profile-links button,.auth-copy,.auth-foot,.dock-tab,.filters,.discovery-filters label,.faq-item p) { color:var(--muted); }
+html[data-theme="dark"] :is(.text-btn,.back,.product-price,.auth-switch,.dock-tab.active,.banner-pause,.category-fallback) { color:#ff9aa2; }
+html[data-theme="dark"] .btn:not(.outline):not(.soft) { background:#bd303a; color:#fff; }
+html[data-theme="dark"] .btn:not(.outline):not(.soft):hover { background:#a7242e; }
+html[data-theme="dark"] .connection-banner.error { background:#3b242a; color:#ffb0b7; }
+html[data-theme="dark"] .store-hero { background:var(--surface); }
+html[data-theme="dark"] .categories::-webkit-scrollbar-thumb { background:#626874; }
+html[data-theme="dark"] .check-chip span { background:var(--surface); color:var(--ink); border-color:var(--line); }
+html[data-theme="dark"] .pwa-notice { background:var(--surface); color:var(--ink); border-color:var(--line); }
+html[data-theme="dark"] :is(.empty,.footer,.profile-links button,.dashboard-top,.qty button,.avatar,.checkout-address-summary,.delivery-selection,.map-status,.auth-brand .close,.auth-password-toggle:hover,.chat-message.received,.modal.auth-modal .auth-role-switch) { background:var(--surface); color:var(--ink); border-color:var(--line); }
+html[data-theme="dark"] :is(.modal.auth-modal .auth-role-switch button.active,.chat-message.sent) { background:var(--soft); color:#ffb0b7; border-color:var(--red); }

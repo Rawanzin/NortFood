@@ -6,3 +6,16 @@
  window.visualViewport?.addEventListener('resize',update);window.addEventListener('resize',update);
  document.addEventListener('focusin',update);document.addEventListener('focusout',()=>requestAnimationFrame(update));update();
 })();
+
+// Recompute the hint from actual overflow, including after a catalog refresh.
+(() => {
+ function syncCategories(){
+  document.querySelectorAll('.category-scroll').forEach(wrapper=>{
+   const list=wrapper.querySelector('.categories');
+   wrapper.classList.toggle('has-more',!!list&&list.scrollWidth-list.clientWidth-list.scrollLeft>2);
+  });
+ }
+ window.NortFoodUI=Object.freeze({syncCategories});
+ addEventListener('resize',syncCategories);
+ document.addEventListener('scroll',event=>{if(event.target.matches?.('.categories'))syncCategories()},true);
+})();
