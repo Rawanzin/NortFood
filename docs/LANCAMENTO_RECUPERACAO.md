@@ -1,5 +1,7 @@
 # Lançamento e recuperação — 23/10/2026
 
+Correção definitiva de temas/transparência: checkpoint `4839794`, tag `checkpoint/theme-transparency-20261023`, anterior às alterações. Publicação verificada no commit público `a95ee3f`. Arquivos de tema usam hashes de conteúdo; o SW mantém atualização controlada e não limpa dados/sessões. Uma reversão deve gerar um novo commit/deploy e ser conferida por HTTPS; não apagar armazenamento do navegador como procedimento de atualização.
+
 Checkpoint local: `1bb5b75` (tag `checkpoint/launch-source-20261023`). Inclui o estado existente antes das correções desta missão. Não contém ambientes privados nem backups. O checkpoint permanece local: relatórios internos não devem ser enviados ao repositório público.
 
 Antes de recuperar, preservar alterações posteriores com um novo commit ou cópia verificada. Consultar `git diff checkpoint/launch-source-20261023 -- <arquivo>` e recuperar somente arquivos necessários com `git restore --source=checkpoint/launch-source-20261023 -- <arquivo>`. Não executar reset/clean no checkout.

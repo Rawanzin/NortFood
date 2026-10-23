@@ -18,11 +18,13 @@ const {stagingDirectory,promote,removeOwned,releaseId,validatePublicScripts}=req
  try{
  for(const file of ['index.html','offline.html','app.js','styles.css','refinements.css','theme.css','theme.js','pwa.css','pwa.js','sw.js'])await fs.copyFile(file,staged+'/'+file);
  await fs.cp('assets',staged+'/assets',{recursive:true});
+ const theme=await require('./theme-assets.cjs').themeAssets(staged);
  for(const bundle of bundles)for(const file of bundle.outputFiles)await fs.writeFile(path.join(staged,path.relative(process.cwd(),file.path)),file.contents);
  const site=require('./site-artifacts.cjs'),generated=site.siteArtifacts(config,{homologation});
- let html=site.renderHTML(await fs.readFile('index.html','utf8'),config,{homologation});if(homologation)html=html.replace('<body>','<body><aside role="note" style="padding:12px;text-align:center;background:#fff1f2;color:#991b1b;font-weight:700">HOMOLOGAÇÃO — Dados sintéticos. Não utilizar para pedidos reais.</aside>');await fs.writeFile(staged+'/index.html',html);
+ let html=theme.render(site.renderHTML(await fs.readFile('index.html','utf8'),config,{homologation}));if(homologation)html=html.replace('<body>','<body><aside role="note" style="padding:12px;text-align:center;background:#fff1f2;color:#991b1b;font-weight:700">HOMOLOGAÇÃO — Dados sintéticos. Não utilizar para pedidos reais.</aside>');await fs.writeFile(staged+'/index.html',html);
  await fs.writeFile(staged+'/robots.txt',generated.robots);await fs.writeFile(staged+'/sitemap.xml',generated.sitemap);
  for(const file of ['404.html','favicon.ico','favicon-16x16.png','favicon-32x32.png','apple-touch-icon.png','site.webmanifest'])await fs.copyFile(file,staged+'/'+file);
+ await fs.writeFile(staged+'/404.html',theme.render(await fs.readFile('404.html','utf8')));
  await fs.copyFile('site.webmanifest',staged+'/manifest.webmanifest');
  if(!hostinger)await fs.copyFile('_redirects',staged+'/_redirects');
  await fs.writeFile(staged+'/config.js','window.NORTFOOD_CONFIG = Object.freeze('+JSON.stringify(config)+');\n');

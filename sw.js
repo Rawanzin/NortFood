@@ -1,6 +1,6 @@
 /* Public files only. Configuration, API calls and private responses never enter CacheStorage. */
 const CACHE_VERSION = 'nortfood-public-__NORTFOOD_RELEASE__';
-const SHELL = ['/offline.html', '/styles.css', '/pwa.css', '/favicon.ico', '/assets/icon-192.png'];
+const SHELL = ['/offline.html', '/styles.css', '/theme.js', '/theme.css', '/pwa.css', '/favicon.ico', '/assets/icon-192.png'];
 const PUBLIC_FILES = new Set([
   ...SHELL, '/app.js', '/refinements.css', '/theme.js', '/theme.css', '/pwa.js', '/site.webmanifest',
   '/favicon-16x16.png', '/favicon-32x32.png', '/apple-touch-icon.png'
