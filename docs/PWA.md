@@ -19,13 +19,13 @@ Para homologação isolada, use `pnpm build:homologation`. O comando lê `.env.h
 
 ## Atualizações e cache
 
-`sw.js` usa o cache versionado `nortfood-public-v1`. Ao alterar o shell público (HTML, CSS, JS ou manifesto), incremente `CACHE_VERSION` para liberar os arquivos antigos durante a ativação do novo service worker.
+`sw.js` usa `nortfood-public-<hash do build>`. O build calcula a versão automaticamente a partir dos arquivos públicos. Não é necessário incrementar uma versão manual. A nova versão aguarda o usuário tocar em **Atualizar**; operações com formulário ocupado adiam a aplicação. Caches antigos do NortFood são removidos após a ativação.
 
-O service worker armazena somente shell e assets públicos do mesmo domínio. Requisições do Supabase, autenticação, storage, funções, pedidos, pagamentos e respostas com `Authorization` nunca entram no cache. O fallback offline abre o shell do app; dados autenticados continuam dependendo de conexão.
+O service worker armazena somente arquivos estáticos públicos do mesmo domínio. HTML de navegação usa rede, com fallback em `offline.html`, sem checkout offline. Configuração, JSON, requisições do Supabase, autenticação, storage, funções, pedidos, pagamentos, consultas com parâmetros e respostas com `Authorization`, `private` ou `no-store` não entram no cache. CSS, JS e imagens usam rede primeiro e cache público quando a rede falha.
 
 ## Arquivos PWA
 
-- `site.webmanifest`: identidade, escopo e ícones do app.
+- `site.webmanifest`: fonte da identidade, escopo e ícones do app. O build também publica `/manifest.webmanifest` com o mesmo conteúdo.
 - `sw.js`: atualização segura, cache público e fallback offline.
 - `pwa.js` e `pwa.css`: registro do worker e experiência de instalação.
 - `assets/icon-192-maskable.png` e `assets/icon-512-maskable.png`: ícones maskable gerados a partir da logo oficial.

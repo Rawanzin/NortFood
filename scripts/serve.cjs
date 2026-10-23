@@ -11,6 +11,7 @@ async function server({root=process.cwd(),config,homologation=false}={}){
   if(pathname==='/config.js')return send(200,types['.js'],'window.NORTFOOD_CONFIG=Object.freeze('+JSON.stringify(config)+');',{'Cache-Control':'no-store'});
   if(pathname==='/robots.txt')return send(200,'text/plain; charset=utf-8',generated.robots);
   if(pathname==='/sitemap.xml')return send(200,'application/xml; charset=utf-8',generated.sitemap);
+  if(pathname==='/manifest.webmanifest')return send(200,types['.webmanifest'],await fs.readFile(path.join(root,'site.webmanifest')));
   const target=path.resolve(root,'.'+decodeURIComponent(pathname==='/'?'/index.html':pathname));
   if(!target.startsWith(root+path.sep)||/[/\\](?:\.git|node_modules|supabase|tests|test-results|backups|docs|src|scripts|\.env[^/\\]*)[/\\]?/i.test(target)||!types[path.extname(target)])throw Error('blocked');
   let content=await fs.readFile(target);if(target===path.join(root,'index.html'))content=renderHTML(content.toString(),config,{homologation});

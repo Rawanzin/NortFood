@@ -1,3 +1,5 @@
+> Atualização de 23/10/2026: [NortFood público](https://nortfood.netlify.app) e PWA publicados no Netlify Free. Cadastros e pedidos reais continuam bloqueados. Consulte o [relatório atual de lançamento](docs/LANCAMENTO_OFICIAL_20261023.md); afirmações anteriores sobre ausência de hospedagem são históricas.
+
 ## Modernização arquitetural — 21/10/2026
 
 Alterações locais na branch `codex/modernizacao-arquitetural-20261021`, preservando o projeto e o estado anterior. Sincronização por identidade, checkout idempotente, persistência tolerante a falhas, mídias isoladas por sessão, módulos de aplicação/apresentação, demo isolada, build por estágio e PWA com atualização controlada. O tema claro e as funcionalidades existentes foram mantidos.

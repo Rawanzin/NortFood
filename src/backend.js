@@ -5,6 +5,7 @@ import { createAuthStorage } from './auth-storage.mjs';
 import { timedFetch } from './platform/http.js';
 import { createSignedMedia } from './data/signed-media.js';
 import { createCartStorage } from './platform/cart-storage.js';
+import { createLiveUpdates } from './platform/live-updates.js';
 const config=window.NORTFOOD_CONFIG||{};
 // Capturar somente o codigo de erro antes de o SDK consumir/limpar a URL de retorno.
 const returnedAuthError=new URLSearchParams(location.hash?.slice(1)||'').get('error')||new URLSearchParams(location.search||'').get('error');
@@ -19,7 +20,8 @@ function authFailure(error){const known={email_not_confirmed:'Confirme seu e-mai
 async function rpc(name,args={}){if(!client)throw new Error('Supabase ainda não configurado. Operações comerciais estão bloqueadas.');const {data,error}=await client.rpc(name,args);if(error)throw failure(error);return data;}
 async function write(query){const {data,error}=await query;if(error)throw failure(error);return data;}
 let user=null,refreshTimer=null,channel=null,listener=null,authRevision=0,recovering=false,googleEnabled=null,providerCheckedAt=0;const media=createSignedMedia({sign:path=>client.storage.from('store-media').createSignedUrl(path,1800),revision:()=>authRevision});
-function setUser(next){if(user?.id!==next?.id){authRevision++;media.clear();}user=next||null;}
+const liveUpdates=client?createLiveUpdates({client,getUser:()=>user,notify:event=>listener?.(event),document,window,navigator,setInterval,clearInterval}):null;
+function setUser(next){const changed=user?.id!==next?.id;if(changed){authRevision++;media.clear();}user=next||null;if(changed)liveUpdates?.identityChanged();}
 let cartStorage;try{cartStorage=createCartStorage(window.localStorage)}catch{cartStorage=createCartStorage(null)}
 window.NortFoodBackend={
  cartStorage,
@@ -55,5 +57,6 @@ window.NortFoodBackend={
  async recoverOrder(key){if(!client||!user)return null;return write(client.from('orders').select('id').eq('customer_id',user.id).eq('idempotency_key',key).maybeSingle());},
  async upload(store,file){if(!file)return null;const form=new FormData();form.append('store_id',store);form.append('file',file);const {data,error}=await client.functions.invoke('upload-media',{body:form});if(error)throw failure(error);return data.path;},
  async image(path){return media.image(path);},
- subscribe(){if(!client)return;clearInterval(refreshTimer);if(channel)client.removeChannel(channel);channel=client.channel('nortfood-events').on('postgres_changes',{event:'*',schema:'public',table:'orders'},()=>listener?.('DATABASE_CHANGE')).on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'},()=>listener?.('DATABASE_CHANGE')).on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications'},()=>listener?.('DATABASE_CHANGE')).on('postgres_changes',{event:'*',schema:'public',table:'dining_tables'},()=>listener?.('DATABASE_CHANGE')).subscribe();refreshTimer=setInterval(()=>listener?.('POLL').catch(()=>{}),15000);},
+ subscribe(){liveUpdates?.start();},
+ dispose(){liveUpdates?.stop();},
 };

@@ -1,6 +1,8 @@
 /* PWA install prompt is injected by pwa.js. Keep this layer independent from
    the application's visual theme so existing pages retain their backgrounds. */
 .nf-pwa-install{bottom:calc(84px + env(safe-area-inset-bottom))!important}
+.nf-pwa-install button{min-height:44px;min-width:44px;background:#c92230!important}
+.nf-pwa-install .nf-pwa-close{background:#fff0f1!important;color:#a71926!important}
 .nf-pwa-update{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:1100;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;width:min(440px,calc(100% - 24px));padding:14px 16px;background:#fff;color:#24252a;border:1px solid #e82e3c;border-radius:14px;box-shadow:0 8px 30px #24252a26;font:600 14px system-ui,sans-serif}
 .nf-pwa-update span{flex:1}
 .nf-pwa-update small{flex-basis:100%;font-weight:400;line-height:1.4}

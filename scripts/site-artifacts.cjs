@@ -1,4 +1,4 @@
-const title='NortFood — delivery e retirada em Porteirinha';
+const title='NortFood';
 const description='Encontre estabelecimentos de Porteirinha, consulte cardápios e faça pedidos de delivery ou retirada. Cada loja organiza sua própria entrega.';
 function publicOrigin(config){try{const u=new URL(config.appUrl);return u.protocol==='https:'&&!/^(localhost|127\.)/.test(u.hostname)&&!/(?:^|\.)(example|invalid|test)$/.test(u.hostname)?u.origin:'';}catch{return '';}}
 const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

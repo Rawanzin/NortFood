@@ -2,6 +2,14 @@
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  const isIOSSafari = isIOS && /safari/i.test(navigator.userAgent) && !/crios|fxios|edgios|opios/i.test(navigator.userAgent);
+  const preferenceKey = 'nortfood-install-remind-after';
+  let remindAfter = 0;
+  try { remindAfter = Number(localStorage.getItem(preferenceKey)) || 0; } catch {}
+  const postpone = () => {
+    remindAfter = Date.now() + 30 * 86400000;
+    try { localStorage.setItem(preferenceKey, String(remindAfter)); } catch {}
+  };
   let deferredPrompt = null;
   let reloadForUpdate = false;
 
@@ -51,7 +59,7 @@
   };
 
   const showInstall = () => {
-    if (isStandalone || document.querySelector('.nf-pwa-install')) return;
+    if (isStandalone || Date.now() < remindAfter || document.querySelector('.nf-pwa-install')) return;
     addStyles();
     const bar = document.createElement('aside');
     bar.className = 'nf-pwa-install';
@@ -59,13 +67,17 @@
     bar.innerHTML = '<span>Tenha o NortFood na sua tela inicial.</span><button type="button" class="nf-pwa-install-action">Instalar</button><button type="button" class="nf-pwa-close" aria-label="Fechar">×</button>';
     bar.querySelector('.nf-pwa-install-action').addEventListener('click', async () => {
       if (deferredPrompt) {
-        deferredPrompt.prompt();
-        await deferredPrompt.userChoice;
+        const prompt = deferredPrompt;
         deferredPrompt = null;
-        bar.remove();
-      } else if (isIOS) showIOSInstructions();
+        try {
+          await prompt.prompt();
+          const choice = await prompt.userChoice;
+          if (choice.outcome !== 'accepted') postpone();
+        } catch { postpone(); }
+        finally { bar.remove(); }
+      } else if (isIOSSafari) { postpone(); bar.remove(); showIOSInstructions(); }
     });
-    bar.querySelector('.nf-pwa-close').addEventListener('click', () => bar.remove());
+    bar.querySelector('.nf-pwa-close').addEventListener('click', () => { postpone(); bar.remove(); });
     document.body.appendChild(bar);
   };
 
@@ -94,6 +106,6 @@
         });
       }).catch(() => {});
     }
-    if (!isStandalone && isIOS) showInstall();
+    if (!isStandalone && isIOSSafari) showInstall();
   });
 })();

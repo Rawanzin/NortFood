@@ -1,3 +1,5 @@
+> Atualização de 23/10/2026: [NortFood público](https://nortfood.netlify.app) e PWA publicados no Netlify Free. Cadastros e pedidos reais continuam bloqueados. Consulte o [relatório atual de lançamento](LANCAMENTO_OFICIAL_20261023.md); afirmações anteriores sobre ausência de hospedagem são históricas.
+
 # Pendências para lançamento — 20/10/2026
 
 **NO-GO para beta público.** Não habilitar pedidos reais, indexação ou exposição da homologação. Continuação privada é permitida, sem promessa de operação comercial aprovada.

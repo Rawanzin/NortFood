@@ -1,0 +1,3 @@
+# A navegação da aplicação usa fragmentos (#shop, #orders, etc.).
+# Não servir index.html para arquivos inexistentes ou caminhos privados.
+/* /404.html 404

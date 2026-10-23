@@ -7,6 +7,7 @@ import {createRefreshQueue} from './application/refresh-queue.js';
 import {resolveCatalogImages} from './application/catalog-images.js';
 import {snapshotView} from './application/snapshot.js';
 import {sessionCommands} from './application/session-commands.js';
+import {orderWhatsApp} from './application/whatsapp.js';
 export function controller(bridge,api){
  const {esc,money,toast,modal,render}=bridge;
  const dining=createDining({...bridge,reload:()=>refresh()},api);window.NortFoodQR=dining;
@@ -71,6 +72,21 @@ export function controller(bridge,api){
  function requireLogin(){if(!api.configured)throw new Error('Supabase não configurado. Pedidos comerciais estão bloqueados.');if(!data().current)throw new Error('Entre na sua conta para continuar.');}
  async function click(t){
   const d=data(),u=d.current,commands=sessionCommands(api);
+  if(t.dataset.whatsappOrder || t.dataset.copyWhatsapp){
+   requireLogin();
+   const order=d.orders.find(o=>o.id===(t.dataset.whatsappOrder||t.dataset.copyWhatsapp));
+   if(!order || !context || !(u.role==='customer'&&order.raw.customer_id===u.id || context.memberships?.some(m=>m.store_id===order.store)))throw new Error('Pedido indisponível para esta conta.');
+   const store=d.stores.find(s=>s.id===order.store),summary=orderWhatsApp(order,store,{privateDetails:!!t.dataset.copyWhatsapp});
+   if(!summary)throw new Error('A loja precisa ter um WhatsApp válido e aprovação antes deste contato.');
+   if(t.dataset.copyWhatsapp){
+    try{await navigator.clipboard.writeText(summary.message);toast('Resumo copiado. Confira o destinatário antes de colar e enviar.');}
+    catch{throw new Error('O navegador não permitiu copiar. Você pode consultar o resumo nesta tela.');}
+   }else{
+    window.open(summary.url,'_blank','noopener,noreferrer');
+    toast('Envie a mensagem no WhatsApp. Abertura do aplicativo não confirma envio nem aceite.');
+   }
+   return true;
+  }
   if(t.dataset.retryCatalog!==undefined){bridge.connection('loading','Carregando estabelecimentos…');render();await refresh('MANUAL');return true;}
   if(await dining.click(t))return true;
   if(t.dataset.exportFinance!==undefined){if(!context?.is_admin)throw new Error('Acesso administrativo não autorizado.');const rows=[['tipo','loja','pedido','valor_centavos','data','referencia'],...d.commissionLedger.map(l=>[l.kind,l.store_id,l.order_id,l.amount_cents,l.created_at,l.reason]),...d.commissionSettlements.map(s=>['settlement',s.store_id,s.order_id,s.amount_cents,s.paid_at,s.reference])],csv=rows.map(row=>row.map(v=>{const raw=String(v??''),safe=typeof v==='number'?raw:/^\s*[=+@-]/.test(raw)?"'"+raw:raw;return '"'+safe.replaceAll('"','""')+'"'}).join(';')).join('\r\n'),url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='nortfood-comissoes.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return true}
@@ -155,5 +171,10 @@ export function controller(bridge,api){
   return false;
  }
  function orderActions(o){const statuses=nextStatus[o.backendStatus]||[],next=o.backendStatus==='preparing'&&o.fulfillment==='dine_in'?['ready_for_table']:o.backendStatus==='preparing'&&o.fulfillment==='pickup'?['ready_for_pickup']:statuses;return next.map(n=>'<button class="btn small" data-live-order="'+esc(o.id)+'" data-live-next="'+n+'">'+esc(statusNames[n])+'</button>').join('')+(!['cancelled','rejected'].includes(o.backendStatus)?'<button class="btn outline small" data-confirm-payment="'+esc(o.id)+'">'+(o.raw.payment_confirmed_at?'Recebimento informado':'Informar pagamento recebido')+'</button>':'')}
- return {refresh,click,submit,orderActions,financePage,adminPage,context:()=>context};
+ function whatsappActions(order){
+  const store=data().stores.find(s=>s.id===order?.store);
+  if(!orderWhatsApp(order,store))return '';
+  return '<section class="dash-card"><div class="dash-card-body"><h2>Contato pelo WhatsApp</h2><p>O pedido permanece registrado no NortFood. Aguarde o aceite da loja no acompanhamento. Abrir o WhatsApp não confirma envio, leitura ou aceite.</p><div class="detail-actions"><button class="btn outline" data-whatsapp-order="'+esc(order.id)+'">Abrir WhatsApp da loja</button><button class="btn outline" data-copy-whatsapp="'+esc(order.id)+'">Copiar resumo completo</button></div><small>O link inclui produtos e total registrado. Endereço e observações pessoais só entram no resumo completo que você escolher copiar e compartilhar.</small></div></section>';
+ }
+ return {refresh,click,submit,orderActions,financePage,adminPage,whatsappActions,context:()=>context};
 }
