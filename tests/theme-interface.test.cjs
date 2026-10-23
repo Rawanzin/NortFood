@@ -30,7 +30,7 @@ test('Theme switch preserves typed credentials, cart and navigation without re-r
   await page.goto('http://127.0.0.1:'+app.address().port+'/?demo=1');await page.locator('.header').waitFor();await page.locator('[data-action="auth"]').first().click();
   await page.locator('#auth-email').fill('regressao-local@example.test');await page.locator('#auth-password').fill('somente-regressao-local');
   await page.emulateMedia({colorScheme:'dark'});await page.waitForFunction(()=>document.documentElement.dataset.theme==='dark');assert.equal(await page.locator('#auth-email').inputValue(),'regressao-local@example.test');assert.equal(await page.locator('#auth-password').inputValue(),'somente-regressao-local');
-  assert.match(await page.locator('.modal [data-brand-logo]').getAttribute('src'),/logo-dark\.webp$/);assert.equal(await page.locator('#auth-email').evaluate(e=>getComputedStyle(e).colorScheme),'dark');await page.keyboard.press('Escape');
+  assert.match(await page.locator('.modal [data-brand-logo]').getAttribute('src'),/logo-dark\.webp$/);assert.equal(await page.locator('#auth-email').evaluate(e=>getComputedStyle(e).colorScheme),'dark only');await page.keyboard.press('Escape');
   await page.locator('[data-action="cart"]').first().click();assert.equal(await page.locator('.drawer').isVisible(),true);await page.emulateMedia({colorScheme:'light'});assert.equal(await page.locator('.drawer').isVisible(),true);
   await page.locator('.drawer [data-action="close-cart"]').click();assert.equal(await page.locator('.drawer').count(),0);await page.getByRole('tab',{name:'Buscar',exact:true}).click();assert.match(await page.locator('h1').innerText(),/Buscar/);assert.deepEqual(errors,[]);
  }finally{await browser?.close();await new Promise(r=>app.close(r));}

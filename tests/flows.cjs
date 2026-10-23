@@ -5,6 +5,8 @@ const path=require('node:path');
 const http=require('node:http');
 const {chromium}=require('playwright');
 const root=path.resolve(__dirname,'..');
+const theme=process.env.NORTFOOD_TEST_THEME;
+const {assertPalette}=require('./theme-palette.cjs');
 let checks=0;
 const check=(value,label)=>{assert.ok(value,label);checks++;console.log('OK '+label)};
 (async()=>{
@@ -18,6 +20,7 @@ const check=(value,label)=>{assert.ok(value,label);checks++;console.log('OK '+la
  const url='http://127.0.0.1:'+server.address().port;
  const snapshot=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('nortfood-v1')));
  const login=async(email,password,seller=false)=>{await page.locator(seller?'[data-action=seller]':'[data-action=auth]').first().click();await page.locator('[data-auth-mode=login]').click();await page.locator('#auth-email').fill(email);await page.locator('#auth-password').fill(password);await page.locator('#auth-form .btn').click();await page.waitForSelector(seller?'.dashboard-top':'.store-card')};
+ if(theme)await context.addInitScript(value=>localStorage.setItem('nortfood-theme',value),theme);
  await page.goto(url+'/?demo=1',{waitUntil:'domcontentloaded'});await page.waitForSelector('.store-card');
  check(await page.locator('.store-card').count()===9,'Catálogo inicial preservado');
  let d=await snapshot();check(d.users.every(u=>u.passwordHash&&!('password'in u)),'Senha não fica em texto puro');
@@ -42,7 +45,7 @@ const check=(value,label)=>{assert.ok(value,label);checks++;console.log('OK '+la
  await page.locator('[data-nav=profile]').click();await page.locator('[data-action=logout]').click();await login('loja@teste.com','123456',true);await page.locator('[data-next="Em preparo"]').click();await page.locator('[data-next="Pronto para retirada"]').click();await page.locator('[data-next="Entregue"]').click();d=await snapshot();check(d.orders.at(-1).timeline.length===4,'Loja conclui retirada com histórico de estados');
  await page.locator('[data-nav=profile]').click();await page.locator('[data-action=logout]').click();await login('cliente@demo.com','1234');await page.locator('[data-nav=orders]').click();await page.locator('[data-order-scope=done]').click();await page.locator('[data-order-detail]').click();await page.locator('[data-review-order]').click();await page.locator('[name=text]').fill('Avaliação demonstrativa');await page.locator('#review-form .btn').click();d=await snapshot();check(d.reviews.length===1,'Avaliação de pedido concluído salva');
  await page.locator('[data-nav=home]').click();await page.locator('[data-view=help]').first().click();await page.locator('#help-search').fill('quem faz');check(await page.locator('.faq-item:visible').count()===1,'Ajuda permite busca');
- for(const width of [320,360,390,430,768,1365]){await page.setViewportSize({width,height:844});for(const route of ['home','search','favorites','offers','help','addresses','orders','settings','notifications','conversations']){await page.goto(url+'/?demo=1#'+route,{waitUntil:'domcontentloaded'});await page.reload({waitUntil:'domcontentloaded'});await page.waitForSelector('main');check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth&&document.body.scrollWidth<=innerWidth),'Sem overflow '+route+' '+width+'px')}}
- await page.locator('[data-nav=profile]').click();await page.locator('[data-action=logout]').click();await login('loja@teste.com','123456',true);for(const width of [320,360,390,430,768,1365]){await page.setViewportSize({width,height:844});for(const tab of ['orders','products','settings','sales']){await page.locator('[data-tab="'+tab+'"]').first().click();check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth&&document.body.scrollWidth<=innerWidth),'Painel '+tab+' sem overflow '+width+'px')}}check(errors.length===0,'Nenhum erro JavaScript');console.log(checks+' verificações aprovadas.');
+ for(const width of [320,360,390,430,768,1365]){await page.setViewportSize({width,height:844});for(const route of ['home','search','favorites','offers','help','addresses','orders','settings','notifications','conversations']){await page.goto(url+'/?demo=1#'+route,{waitUntil:'domcontentloaded'});await page.reload({waitUntil:'domcontentloaded'});await page.waitForSelector('main');check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth&&document.body.scrollWidth<=innerWidth),'Sem overflow '+route+' '+width+'px');if(theme)await assertPalette(page,theme)}}
+ await page.locator('[data-nav=profile]').click();await page.locator('[data-action=logout]').click();await login('loja@teste.com','123456',true);for(const width of [320,360,390,430,768,1365]){await page.setViewportSize({width,height:844});for(const tab of ['orders','products','settings','sales']){await page.locator('[data-tab="'+tab+'"]').first().click();check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth&&document.body.scrollWidth<=innerWidth),'Painel '+tab+' sem overflow '+width+'px');if(theme)await assertPalette(page,theme)}}check(errors.length===0,'Nenhum erro JavaScript');console.log(checks+' verificações aprovadas.');
  }finally{if(browser)await browser.close();await new Promise(r=>server.close(r))}
 })().catch(e=>{console.error(e);process.exitCode=1});
