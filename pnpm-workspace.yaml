@@ -1,0 +1,3 @@
+# Required by pnpm 11 for esbuild's verified package installation script.
+allowBuilds:
+  esbuild: true
