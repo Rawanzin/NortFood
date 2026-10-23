@@ -25,6 +25,8 @@ async function main(){
   ['anonymous_messages_denied','/rest/v1/messages?select=id&limit=0',401],
   ['anonymous_admin_denied','/rest/v1/rpc/nf_admin_dashboard',401]
  ]){const r=await fetch(config.supabaseUrl+route,{headers,signal:AbortSignal.timeout(20000)});const data=await r.json();results.push({name,status:r.status,expected,passed:r.status===expected&&(!validate||validate(data))});}
+ const upload=await fetch(config.supabaseUrl+'/functions/v1/upload-media',{method:'POST',headers:{...headers,Origin:config.appUrl},signal:AbortSignal.timeout(20000)});
+ results.push({name:'anonymous_upload_denied',status:upload.status,expected:401,passed:upload.status===401});
  const http=await fetch(origin.href.replace('https:','http:'),{redirect:'manual'});results.push({name:'http_redirects_to_https',status:http.status,passed:[301,302,307,308].includes(http.status)&&http.headers.get('location')?.startsWith(origin.origin)});
  const report={checkedAt:new Date().toISOString(),origin:origin.origin,passed:results.every(r=>r.passed),scope:'Anonymous HTTPS/HTTP static/privacy/manifest/backend denial checks. No user or order created. Does not approve authenticated commercial journeys or physical installation.',results};
  await fs.mkdir('test-results/launch-20261023',{recursive:true});const label=origin.hostname==='nortfood.netlify.app'?'official':'preview';await fs.writeFile('test-results/launch-20261023/https-'+label+'.json',JSON.stringify(report,null,2));
