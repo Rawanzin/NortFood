@@ -16,6 +16,7 @@ export function orderWhatsApp(order, store, {privateDetails = false} = {}) {
   for (const item of raw.items) {
     lines.push(item.quantity + '× ' + item.name);
     for (const option of item.options || []) lines.push('  + ' + option.name);
+    if (privateDetails && item.removed_ingredients?.length) lines.push('  Sem: ' + item.removed_ingredients.join(', '));
     if (privateDetails && item.notes) lines.push('  Observação: ' + item.notes);
   }
   lines.push('Total registrado: ' + money(raw.total_cents), 'Pagamento: ' + order.payment);

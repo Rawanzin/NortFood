@@ -21,10 +21,10 @@ test('A late signed image cannot commit the former administrator identity or pri
 });
 test('Signing out clears private state before the network finishes, including when the new load fails',async()=>{
   const {d,bridge}=harness();let revision=0;const gate=deferred();
-  const api={sessionRevision:()=>revision,context:async()=>context('a'),load:async()=>({catalog:[],snapshot:{},pilotEnabled:false})};
-  const ctl=await controller(bridge,api);await ctl.refresh('BOOT');d.orders=[{id:'private'}];d.conversations=[{body:'private'}];revision++;
+  const api={sessionRevision:()=>revision,context:async()=>context('a'),load:async()=>({catalog:[],snapshot:{},pilotEnabled:false,storeSetups:[{store_id:'private',pending_notes:'Private setup'}]})};
+  const ctl=await controller(bridge,api);await ctl.refresh('BOOT');assert.equal(ctl.setupFor('private').pending_notes,'Private setup');d.orders=[{id:'private'}];d.conversations=[{body:'private'}];revision++;
   api.context=async()=>null;api.load=async()=>{await gate.promise;throw Error('offline')};
-  const pending=ctl.refresh('SIGNED_OUT');assert.equal(d.current,null);assert.equal(d.orders.length,0);assert.equal(d.conversations.length,0);assert.equal(ctl.context(),null);
+  const pending=ctl.refresh('SIGNED_OUT');assert.equal(d.current,null);assert.equal(d.orders.length,0);assert.equal(d.conversations.length,0);assert.equal(ctl.context(),null);assert.equal(ctl.setupFor('private'),undefined);
   gate.resolve();await assert.rejects(()=>pending,/offline/);assert.equal(d.current,null);
 });
 test('Account switch during checkout never empties the new cart or opens the old order',async()=>{

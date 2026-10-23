@@ -12,6 +12,8 @@ Variáveis de build: `NORTFOOD_SUPABASE_URL`, `NORTFOOD_SUPABASE_PUBLISHABLE_KEY
 
 A interface pública permite acessar cadastro, login e recuperação. A disponibilidade real depende do Supabase Auth e do SMTP autorizado; abrir o formulário não comprova criação de conta. Categorias editoriais permanentes aparecem mesmo com catálogo de lojas vazio. A migração 008 adiciona rascunhos privados, envio para análise e limite administrativo de uma loja aprovada. Não habilita pedidos ou concede administradores. Para liberar operação, validar loja nominal autorizada, e-mail real, sessões independentes, RLS e checkout, recebimento do vendedor, confirmação e contingência. Alterar uma flag de interface não aprova o lançamento comercial.
 
+A migração 009 acrescenta ingredientes removíveis, snapshot no pedido, restrições de venda e configuração comercial privada. A importação de cardápio é separada, transacional e idempotente. Não reaplicar migrações nem publicar lojas pendentes para preencher a interface. Cadastro inicial usa e-mail, senha de no mínimo 8 caracteres e consentimento. Dados de contato são completados antes do primeiro pedido. O mapa de descoberta abre em modal, com GPS pontual e busca manual; não salva automaticamente endereço ou coordenadas.
+
 ## PWA
 
 Android/Chrome: usar Instalar quando oferecido pelo navegador. iPhone/iPad: Safari → Compartilhar → Adicionar à Tela de Início. O SW protege respostas privadas, oferece uma página offline e pede confirmação para aplicar atualização. Fechar/cancelar o convite de instalação adia nova oferta por 30 dias. Instalação física em aparelhos exige ensaio específico.

@@ -179,7 +179,8 @@ body{padding-bottom:calc(80px + env(safe-area-inset-bottom))}
 .toast{bottom:calc(80px + env(safe-area-inset-bottom))}
 .keyboard-open .nf-dock{display:none}.keyboard-open .toast{bottom:16px}
 .auth-google:not(:disabled){color:var(--ink);background:#fff;cursor:pointer}.auth-google:not(:disabled):hover{border-color:var(--red)}
-.auth-google:not(:disabled) .google-mark{color:var(--red)}
+.auth-modal .auth-google{background:#fff;color:#1f1f1f;border:1px solid #747775;gap:10px}
+.auth-google img.google-mark{width:20px;height:20px;object-fit:contain;filter:none}
 .map-callout{margin-top:8px;min-height:44px;flex-wrap:nowrap}
 .map-callout>span{flex:1;min-width:0}
 .map-callout .text-btn{flex-shrink:0}
@@ -197,3 +198,11 @@ body{padding-bottom:calc(80px + env(safe-area-inset-bottom))}
 .text-btn,.btn.soft,.product-price{color:#b82b36}
 /* Os dois caminhos de cadastro permanecem legíveis em 320px. */
 .auth-role-switch button{white-space:normal;min-width:0;min-height:48px;line-height:1.35;flex:1}
+/* Mapa de descoberta integrado; mantém a página e a posição de rolagem. */
+.nearby-modal{width:min(900px,100%);max-height:calc(100dvh - 32px);overflow-y:auto}
+.nearby-search>div{display:flex;gap:8px;margin-top:6px}
+.nearby-search input{min-width:0;flex:1}
+[data-nearby-canvas]{height:clamp(260px,46dvh,480px);border-radius:16px;overflow:hidden;isolation:isolate}
+[data-nearby-results],[data-nearby-stores]{display:flex;flex-wrap:wrap;gap:8px}
+.nearby-modal .leaflet-popup-content{color:#222;line-height:1.5}
+@media(max-width:600px){.modal-scrim:has(.nearby-modal){align-items:flex-end;padding:0}.nearby-modal{max-height:calc(100dvh - env(safe-area-inset-top) - 12px);border-radius:24px 24px 0 0;padding-bottom:calc(20px + env(safe-area-inset-bottom))}.nearby-search>div{flex-wrap:wrap}.nearby-search input{width:100%}}
