@@ -14,3 +14,4 @@ NORTFOOD_GA4_MEASUREMENT_ID = ""
 [context.branch-deploy.environment]
 NORTFOOD_ENABLE_INDEXING = "no"
 NORTFOOD_GA4_MEASUREMENT_ID = ""
+# A producao usa somente release/nortfood; este commit verifica o webhook automatico.
