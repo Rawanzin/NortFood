@@ -21,7 +21,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .search input:focus { border-color: #d83b45; background: #fff; box-shadow: 0 0 0 3px #d83b4517; }
 .hero.banner-carousel { border-radius: 14px; box-shadow: 0 8px 24px #22252a12; }
 .wrap { max-width: 1240px; }
-.section { margin-top: 30px; }
+.section { margin-top: 0; }
 .section-head { margin-bottom: 14px; }
 .section-head h2, .wrap > h1 { color: #25272b; }
 .section-sub { line-height: 1.5; }
@@ -75,7 +75,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .head-actions { grid-column: 2; grid-row: 1; min-width: 0; justify-content: flex-end; gap: 3px; }
   .head-actions .btn { min-height: 38px; padding: 8px 10px; }
   .wrap { padding-left: 16px; padding-right: 16px; }
-  .section { margin-top: 24px; }
+  .section { margin-top: 0; }
   .store-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
   .category { flex-basis: 96px; min-height: 96px; }
   .store-art { min-height: 112px; }
@@ -121,14 +121,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .check-chip{position:relative}.check-chip input{width:18px;height:18px;max-width:18px;left:10px;top:10px}.check-chip input:focus-visible+span{outline:3px solid #e82e3c88;outline-offset:2px}.field textarea{width:100%;box-sizing:border-box}
 
 /* Integração comercial */
-.connection-banner{min-height:60px;padding:12px 14px;border:1px solid #e2e4e6;border-radius:12px;background:#fff;font-size:12px;color:#4d535b}.connection-banner.error{color:#9c2532;background:#fff3f4;border-color:#f3c3ca}.banner-pause{position:absolute;z-index:3;right:12px;bottom:12px;padding:8px 12px;border:0;border-radius:20px;background:#fff;color:var(--red);font-weight:700;min-height:44px}.commercial-controls{display:flex;gap:8px;flex-wrap:wrap}.field label,.form>label{display:block}.form>label>input,.form>label>textarea,.form>label>select{width:100%;max-width:100%;padding:10px;border:1px solid var(--line);border-radius:9px;box-sizing:border-box}.recent-discovery{margin:20px 0}
+.connection-banner{padding:12px 14px;border:1px solid #e2e4e6;border-radius:12px;background:#fff;font-size:12px;color:#4d535b}.connection-banner.error{color:#9c2532;background:#fff3f4;border-color:#f3c3ca}.banner-pause{position:static;order:2;padding:8px 12px;border:0;border-radius:8px;background:transparent;color:#b82b36;font-weight:700;min-height:44px}.commercial-controls{display:flex;gap:8px;flex-wrap:wrap}.field label,.form>label{display:block}.form>label>input,.form>label>textarea,.form>label>select{width:100%;max-width:100%;padding:10px;border:1px solid var(--line);border-radius:9px;box-sizing:border-box}.recent-discovery{margin:20px 0}
 
-@media(max-width:430px){.banner-pause{top:10px;bottom:auto;right:10px;min-height:36px}}
 
 .form>label>input[type=checkbox]{width:18px;height:18px;margin-right:6px;vertical-align:middle;accent-color:var(--red)}
 
 /* PNGs NortFood: preserve o canal alfa sem blocos de fundo nas próprias imagens. */
-.brand-logo { display:block; width:154px; height:42px; object-fit:contain; object-position:left center; border-radius:0; background:transparent; }
+.brand-logo { display:block; width:154px; height:auto; aspect-ratio:760/298; object-fit:contain; object-position:left center; border-radius:0; background:transparent; }
 .footer-logo { width:132px; height:38px; }
 .auth-logo { width:176px; height:54px; object-position:center; }
 .cat-icon { display:grid; place-items:center; padding:3px; overflow:visible; background:transparent; }
@@ -142,7 +141,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 
 @media (max-width:760px) {
- .brand-logo { width:132px; height:38px; }
+ .brand-logo { width:132px; height:auto; }
  .auth-logo { width:160px; height:48px; }
  .cat-icon { width:48px; height:48px; }
 }
@@ -181,7 +180,18 @@ body{padding-bottom:calc(80px + env(safe-area-inset-bottom))}
 .keyboard-open .nf-dock{display:none}.keyboard-open .toast{bottom:16px}
 .auth-google:not(:disabled){color:var(--ink);background:#fff;cursor:pointer}.auth-google:not(:disabled):hover{border-color:var(--red)}
 .auth-google:not(:disabled) .google-mark{color:var(--red)}
-.map-callout{margin-top:16px}
+.map-callout{margin-top:8px;min-height:44px;flex-wrap:nowrap}
+.map-callout>span{flex:1;min-width:0}
+.map-callout .text-btn{flex-shrink:0}
+.map-callout .text-btn{min-height:44px;padding:8px 0}
+.category-section{padding-top:18px}
+.category-empty{margin-top:8px}
+.category-scroll{position:relative;min-width:0}
+.category-scroll.has-more:after{content:'›';position:absolute;right:0;top:0;bottom:8px;width:28px;display:grid;place-items:center;background:linear-gradient(90deg,transparent,var(--page,#fbfbfa) 65%);color:var(--ink);font-size:28px;pointer-events:none}
+.categories{scroll-behavior:smooth;scroll-padding-inline:8px}
+.head-actions .icon-btn{min-width:44px;min-height:44px;padding:8px}
+@media(max-width:760px){.head-inner{gap:12px}.head-actions{gap:4px}.header .brand-logo{width:clamp(100px,30vw,132px);height:auto}}
+@media(prefers-reduced-motion:reduce){.categories{scroll-behavior:auto}}
 
 /* Contraste de texte pequeno sobre fundos claros, sem alterar logos ou fotos. */
 .text-btn,.btn.soft,.product-price{color:#b82b36}

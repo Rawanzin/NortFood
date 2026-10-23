@@ -38,6 +38,12 @@
 /refinements.css
   Cache-Control: public, max-age=0, must-revalidate
 
+/theme.css
+  Cache-Control: public, max-age=0, must-revalidate
+
+/theme.js
+  Cache-Control: public, max-age=0, must-revalidate
+
 /pwa.css
   Cache-Control: public, max-age=0, must-revalidate
 

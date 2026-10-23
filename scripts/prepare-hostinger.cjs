@@ -11,7 +11,7 @@ async function prepare({server,appOrigin,passwordFile}={}){
  const result=spawnSync(process.execPath,['scripts/build.cjs','--homologation','--hostinger'],{cwd:root,windowsHide:true,encoding:'utf8',env:{...process.env,NORTFOOD_HOMOLOGATION_PREVIEW_URL:appOrigin||''}});
  if(result.status!==0)throw Error('HOSTINGER_ISOLATED_BUILD_FAILED');
  const files=await inventory();
- const allowed=new Set(['index.html','offline.html','release.json','404.html','app.js','styles.css','refinements.css','pwa.css','pwa.js','sw.js','config.js','favicon.ico','favicon-16x16.png','favicon-32x32.png','apple-touch-icon.png','site.webmanifest','manifest.webmanifest','robots.txt','sitemap.xml']);
+ const allowed=new Set(['index.html','offline.html','release.json','404.html','app.js','styles.css','refinements.css','theme.css','theme.js','pwa.css','pwa.js','sw.js','config.js','favicon.ico','favicon-16x16.png','favicon-32x32.png','apple-touch-icon.png','site.webmanifest','manifest.webmanifest','robots.txt','sitemap.xml']);
  const asset=name=>name.startsWith('assets/')&&!/(?:^|\/)\./.test(name)&&/\.(?:js|css|png|jpe?g|webp|svg|ico|woff2|txt)$/i.test(name);
  if(files.some(f=>!asset(f.path)&&!allowed.has(f.path)))throw Error('HOSTINGER_UNEXPECTED_OUTPUT_FILE');
  for(const file of files.filter(f=>/\.(?:js|css|html|svg|txt)$/i.test(f.path))){

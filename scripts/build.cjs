@@ -9,14 +9,14 @@ const {stagingDirectory,promote,removeOwned,releaseId,validatePublicScripts}=req
  if(!url||!key)throw Error('SUPABASE_PUBLIC_CONFIGURATION_REQUIRED: configure URL e chave publica antes de gerar a publicacao.');
  if(homologation&&url!=='https://zrczgghucwsaxqnyaapk.supabase.co')throw Error('HOMOLOGATION_PREVIEW_TARGET_FORBIDDEN');
  if(homologation&&config.appUrl){const u=new URL(config.appUrl);if(u.protocol!=='https:'||u.origin!==config.appUrl||u.username||u.password)throw Error('HOMOLOGATION_PREVIEW_ORIGIN_INVALID');}
- validatePublicScripts(['app.js','pwa.js','sw.js','assets/local-entry.js','assets/backend-loader.js','assets/site-runtime.js','assets/ui-runtime.js','assets/store-location.js']);
+ validatePublicScripts(['app.js','pwa.js','sw.js','theme.js','assets/local-entry.js','assets/backend-loader.js','assets/site-runtime.js','assets/ui-runtime.js','assets/store-location.js']);
  const bundles=await Promise.all([
  esbuild.build({entryPoints:['src/backend.js'],bundle:true,minify:true,format:'iife',target:'es2022',external:['./pdf-export.js'],outfile:'assets/nortfood-backend.js',write:false}),
  esbuild.build({entryPoints:['src/pdf-export.js'],bundle:true,minify:true,format:'esm',target:'es2022',outfile:'assets/pdf-export.js',write:false}),
  esbuild.build({entryPoints:['src/demo/catalog.js'],bundle:true,minify:true,format:'esm',target:'es2022',outfile:'assets/demo-catalog.js',write:false})]);
  const staged=await stagingDirectory(output);
  try{
- for(const file of ['index.html','offline.html','app.js','styles.css','refinements.css','pwa.css','pwa.js','sw.js'])await fs.copyFile(file,staged+'/'+file);
+ for(const file of ['index.html','offline.html','app.js','styles.css','refinements.css','theme.css','theme.js','pwa.css','pwa.js','sw.js'])await fs.copyFile(file,staged+'/'+file);
  await fs.cp('assets',staged+'/assets',{recursive:true});
  for(const bundle of bundles)for(const file of bundle.outputFiles)await fs.writeFile(path.join(staged,path.relative(process.cwd(),file.path)),file.contents);
  const site=require('./site-artifacts.cjs'),generated=site.siteArtifacts(config,{homologation});
