@@ -1,0 +1,51 @@
+{
+  "name": "nortfood",
+  "private": true,
+  "version": "0.2.0",
+  "scripts": {
+    "start": "node scripts/serve.cjs",
+    "build": "node scripts/build.cjs",
+    "test": "node --test tests/database.test.cjs tests/migrations-audit.test.cjs tests/location-finance.test.cjs tests/store-location.test.cjs tests/commercial.test.cjs tests/ui-contract.test.cjs tests/qr-tables.test.cjs tests/qr-browser.test.cjs tests/media-upload.test.cjs tests/deployment.test.cjs tests/auth-lifecycle.test.cjs tests/backup-copy.test.cjs tests/test-environment.test.cjs tests/legal-navigation.test.cjs tests/homologation.test.cjs tests/beta-release.test.cjs tests/https-local.test.cjs tests/admin-authorization.test.cjs tests/preview-protection.test.cjs tests/light-interface.test.cjs tests/hostinger.test.cjs tests/auth-ui.test.cjs tests/final-audit.test.cjs tests/signup-entry.test.cjs tests/pwa.test.cjs tests/application-services.test.cjs tests/session-isolation.test.cjs tests/database-fresh.test.cjs tests/pwa-cache.test.cjs tests/pwa-browser.test.cjs tests/build-output.test.cjs tests/startup-loading.test.cjs tests/launch.test.cjs",
+    "test:demo": "node tests/flows.cjs",
+    "test:live": "node tests/supabase-live.cjs",
+    "test:backup:transport": "node --test tests/backup.native.cjs",
+    "test:restore": "node scripts/restore-backup-isolated.cjs",
+    "test:production:read": "node scripts/check-production-readonly.cjs",
+    "check:release-config": "node scripts/check-release-config.cjs",
+    "start:homologation": "node scripts/start-local.cjs",
+    "prepare:homologation": "node scripts/prepare-homologation.cjs",
+    "test:homologation": "node scripts/run-homologation.cjs",
+    "test:beta": "node --test tests/beta-release.test.cjs",
+    "perf:lab": "node scripts/performance-lab.cjs current",
+    "test:https:local": "node --test tests/https-local.test.cjs",
+    "build:homologation": "node scripts/build.cjs --homologation",
+    "check:preview-protection": "node scripts/check-protected-preview.cjs",
+    "prepare:hostinger": "node scripts/prepare-hostinger.cjs",
+    "test:hostinger": "node --test tests/hostinger.test.cjs",
+    "generate:favicons": "node scripts/generate-favicons.cjs",
+    "dev": "node scripts/start-local.cjs",
+    "test:modernization": "node --test tests/application-services.test.cjs tests/session-isolation.test.cjs tests/database-fresh.test.cjs tests/pwa-cache.test.cjs tests/pwa-browser.test.cjs tests/build-output.test.cjs tests/startup-loading.test.cjs",
+    "check:architecture": "node scripts/check-architecture.cjs",
+    "audit:homologation:read": "node scripts/audit-homologation-readonly.cjs",
+    "lint": "node scripts/check-syntax.cjs",
+    "test:load:isolated": "node scripts/load-isolated.cjs",
+    "audit:release": "node scripts/audit-release.cjs",
+    "test:public": "node scripts/verify-public.cjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.117.3",
+    "pdf-lib": "1.17.1",
+    "qrcode": "1.5.4"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "@imagemagick/magick-wasm": "0.0.44",
+    "esbuild": "0.28.2",
+    "imapflow": "2.5.7",
+    "jsqr": "1.4.0",
+    "mailparser": "3.9.47",
+    "nodemailer": "10.1.7",
+    "playwright": "1.64.0"
+  },
+  "packageManager": "pnpm@11.25.0"
+}

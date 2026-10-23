@@ -1,23 +1,31 @@
 # NortFood
 
-Marketplace demonstrativo responsivo em HTML, CSS e JavaScript sem dependências de build. Abra `index.html` ou sirva esta pasta em um servidor estático.
+Aplicação existente em HTML/CSS/JavaScript, esbuild e Supabase. Site público: https://nortfood.netlify.app.
 
-## Funcionalidades
+## Build
 
-- Busca, categorias múltiplas por estabelecimento, favoritos, lojas e cardápios agrupados por categoria de produto.
-- Cadastro local de cliente ou estabelecimento e edição das informações do perfil comercial.
-- Cardápio com inclusão, edição, exclusão, reordenação, imagem e disponibilidade de produtos.
-- Controle persistente para ligar ou fechar a loja, respeitando o horário quando não houver uma alteração manual.
-- Carrinho por estabelecimento, checkout demonstrativo, histórico e fluxo de pedidos até a conclusão, com recusa e cancelamento.
-- Conversas locais entre cliente e estabelecimento, com horário, indicação de mensagens não lidas e histórico separado por conta e loja.
-- Escolha de endereço de entrega em mapa interativo Leaflet/OpenStreetMap, com GPS opcional, pino central, geocodificação reversa opcional e coordenadas anexadas ao pedido.
-- Notificações locais com leitura individual ou em lote e separação por cliente/estabelecimento.
-- Relatórios de pedidos e vendas para hoje, 7 dias ou 30 dias, calculados a partir dos pedidos armazenados.
-- Cálculo demonstrativo da comissão NortFood de 5% e repasse estimado de 95% sobre os itens.
-- A entrega é responsabilidade do estabelecimento.
+Node 24 e pnpm 11.25.0. Executar `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm check:architecture` e `pnpm build`. Publicar apenas `dist`. O build valida a chave pública, usa staging próprio e identifica o conteúdo da versão.
 
-Conta de demonstração: `cliente@demo.com` / `1234`. Também é possível criar contas locais de cliente e estabelecimento. Os dados ficam no armazenamento local do navegador.
+Variáveis de build: `NORTFOOD_SUPABASE_URL`, `NORTFOOD_SUPABASE_PUBLISHABLE_KEY`, `NORTFOOD_APP_URL=https://nortfood.netlify.app`, `NORTFOOD_PUBLIC_PREVIEW=yes`, `NORTFOOD_ENABLE_INDEXING=no`. Não fornecer service_role, PATs, senhas ou segredos de servidor ao frontend.
 
-## Para produção
+## Estado operacional
 
-Este protótipo não é um serviço de produção: contas, pedidos, conversas, notificações e imagens ficam no navegador; senhas não têm proteção de servidor; e não há sincronização entre dispositivos ou notificações em tempo real. O geocodificador público do OpenStreetMap é usado somente quando o usuário solicita identificação do endereço; sua disponibilidade e cobertura não são garantidas. Não use credenciais reais. Para operar com clientes reais, conecte uma API e banco de dados, autenticação segura, autorização por estabelecimento, armazenamento de imagens e um provedor de pagamentos. A comissão é apenas calculada na interface e não é cobrada. Entregas ficam sob responsabilidade das lojas.
+A publicação inicial é uma apresentação pública com cadastro e pedidos indisponíveis. O backend continua com piloto bloqueado. Para liberar operação, validar loja nominal autorizada, e-mail real, termos/contato do responsável, sessões independentes, RLS e checkout, recebimento do vendedor, confirmação e contingência. Alterar uma flag de interface não aprova o lançamento comercial.
+
+## PWA
+
+Android/Chrome: usar Instalar quando oferecido pelo navegador. iPhone/iPad: Safari → Compartilhar → Adicionar à Tela de Início. O SW protege respostas privadas, oferece uma página offline e pede confirmação para aplicar atualização. Fechar/cancelar o convite de instalação adia nova oferta por 30 dias. Instalação física em aparelhos exige ensaio específico.
+
+## Publicação e reversão
+
+Somente `release/nortfood` é branch de produção Netlify. Branches experimentais não devem ser configuradas como produção. Comando: `pnpm build`; diretório: `dist`. A configuração do ambiente fica na hospedagem; o repositório não contém credenciais.
+
+Validar uma prévia e executar `pnpm test:public -- https://<deploy>--nortfood.netlify.app` antes da promoção. Após publicar: `pnpm test:public`. O gate atual exige apresentação pública e piloto bloqueado; adaptar somente depois da aprovação comercial.
+
+Para rollback, republicar no painel Netlify um deploy previamente validado e reverter o commit correspondente em `release/nortfood`, preservando a correção nos próximos builds. Conferir HTTPS, `release.json`, configuração pública e bloqueio comercial. Não restaurar banco para reverter frontend. Migrações registradas não devem ser reaplicadas.
+
+## Testes e limites
+
+`pnpm test` e `pnpm test:demo` são verificações locais. Dados sintéticos e mocks nunca comprovam operação remota real. `pnpm test:load:isolated` testa somente GET / no servidor HTTP em loopback nos níveis 50, 100, 250, 500 e 1000; não contata hospedagem ou banco remoto. Não demonstra capacidade comercial para esses níveis. Nunca direcionar carga sintética para produção gratuita.
+
+Netlify e Supabase usam planos Free. Limites são compartilhados pela conta/organização e devem ser consultados no painel antes de novas publicações ou campanhas. Não habilitar recarga, upgrade ou serviços pagos automaticamente.

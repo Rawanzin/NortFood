@@ -1,0 +1,40 @@
+// Mocks de transporte do SDK para regressao de concorrencia do frontend.
+const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),esbuild=require('esbuild'),path=require('node:path');
+async function backend(client,options={}){const result=await esbuild.build({entryPoints:[path.resolve(__dirname,'../src/backend.js')],bundle:true,write:false,format:'iife',platform:'browser',plugins:[{name:'auth-transport-fixture',setup(build){build.onResolve({filter:/^@supabase\/supabase-js$/},()=>({path:'client',namespace:'fixture'}));build.onResolve({filter:/^\.\/commercial\.js$/},()=>({path:'controller',namespace:'fixture'}));build.onLoad({filter:/.*/,namespace:'fixture'},a=>({contents:a.path==='client'?'export const createClient=()=>window.__client':'export const controller=()=>({})'}));}}]});const window={addEventListener(){},removeEventListener(){},NORTFOOD_CONFIG:{supabaseUrl:'https://fixture.supabase.co',publishableKey:'sb_publishable_fixture',appUrl:'http://localhost:4173'},__client:client,localStorage:{getItem:()=>null,setItem(){},removeItem(){}},sessionStorage:{getItem:()=>null,setItem(){},removeItem(){}}};vm.runInNewContext(result.outputFiles[0].text,{window,document:{visibilityState:'visible',addEventListener(){},removeEventListener(){}},navigator:{onLine:true},location:{origin:'http://localhost:4173'},AbortController,fetch:options.fetch||fetch,setTimeout:()=>0,clearTimeout,clearInterval(){},setInterval:()=>0,URLSearchParams});return window.NortFoodBackend;}
+function transport(){let changed;const channel={on(){return this},subscribe(){return this}};const client={auth:{getUser:async()=>({data:{user:{id:'first',email:'first@example.test'}}}),onAuthStateChange:fn=>{changed=fn},signOut:async()=>{changed('SIGNED_OUT',null);return {error:null}}},channel:()=>channel,removeChannel:()=>Promise.resolve()};return {client,change:(...args)=>changed(...args)};}
+
+test('Google verifica provedor real antes do redirecionamento e usa origem raiz',async()=>{
+ const {client}=transport();let request;client.auth.signInWithOAuth=async r=>{request=r;return {data:{url:'https://accounts.google.com/'},error:null}};
+ const api=await backend(client,{fetch:async()=>({ok:true,json:async()=>({external:{google:true}})})});await api.google();assert.equal(request.provider,'google');assert.equal(request.options.redirectTo,'http://localhost:4173');assert.equal(new URL(request.options.redirectTo).hash,'');
+ const unavailable=await backend(client,{fetch:async()=>({ok:true,json:async()=>({external:{google:false}})})});request=null;await assert.rejects(()=>unavailable.google(),/provedor precisa/);assert.equal(request,null);
+ const offline=await backend(client,{fetch:async()=>{throw Error('offline')}});assert.equal(await offline.googleAvailable(),null);
+});
+
+test('Cadastro autorizado mantem usuario na sessao e login informa confirmacao pendente',async()=>{
+ const {client}=transport();client.auth.signUp=async()=>({data:{user:{id:'created'},session:{user:{id:'created'}}},error:null});client.rpc=async()=>({data:{profile:{id:'created'},memberships:[],is_admin:false},error:null});
+ const api=await backend(client);assert.equal(await api.register('created@example.test','long-fixture-password','Cliente'),true);assert.equal((await api.context()).user.id,'created');
+ client.auth.signInWithPassword=async()=>({data:{},error:{code:'email_not_confirmed'}});await assert.rejects(()=>api.login('pending@example.test','long-fixture-password'),/Confirme seu e-mail/);
+});
+
+test('Recuperacao reserva o fragmento para tokens Auth; evento de recuperacao escolhe a tela',async()=>{
+ const {client,change}=transport();let redirect;client.auth.resetPasswordForEmail=async(email,options)=>{redirect=options.redirectTo;return {error:null}};const api=await backend(client);await api.initialize(async()=>{});await api.recover('common@example.test');assert.equal(new URL(redirect).hash,'','Fragmento de rota nao deve disputar espaco com o access_token retornado pelo Auth');assert.equal(new URL(redirect).origin,'http://localhost:4173');change('PASSWORD_RECOVERY',{user:{id:'recovery'}});assert.equal(api.recoveryRequested(),true);
+});
+test('Resposta de contexto antiga nao e combinada com nova identidade',async()=>{
+ const {client,change}=transport();let resolve;client.rpc=()=>new Promise(r=>{resolve=r});const api=await backend(client);await api.initialize(async()=>{});const revision=api.sessionRevision();const pending=api.context();change('SIGNED_IN',{user:{id:'second',email:'second@example.test'}});resolve({data:{profile:{id:'first'},memberships:[],is_admin:false},error:null});assert.equal(await pending,null);assert.ok(api.sessionRevision()>revision);
+});
+test('Cadastro com confirmacao conserva nome solicitado, sem conceder cargo',async()=>{
+ const {client}=transport();let signup;client.auth.signUp=async request=>{signup=request;return {data:{user:{id:'pending'},session:null},error:null}};const api=await backend(client);const signed=await api.register('owner@example.test','a-long-fixture-password','Nome','38999999999','  Loja apos confirmar  ');assert.equal(signed,false);assert.equal(signup.options.data.requested_store_name,'Loja apos confirmar');assert.equal(signup.options.data.role,undefined);assert.equal(signup.options.emailRedirectTo,'http://localhost:4173');assert.equal(await api.context(),null);
+});
+test('Logout invalida revisao e contexto da identidade anterior',async()=>{
+ const {client}=transport();const api=await backend(client);await api.initialize(async()=>{});const revision=api.sessionRevision();await api.logout();assert.ok(api.sessionRevision()>revision);assert.equal(await api.context(),null);
+});
+test('Recuperacao recebida durante inicializacao nao se perde antes de getUser',async()=>{
+ const {client,change}=transport();client.auth.getUser=async()=>{change('PASSWORD_RECOVERY',{user:{id:'recovery',email:'recovery@example.test'}});return {data:{user:{id:'recovery'}}}};client.auth.updateUser=async()=>({data:{user:{id:'recovery'}},error:null});const api=await backend(client);await api.initialize(async()=>{});assert.equal(api.recoveryRequested(),true);await api.password('long-local-fixture-password');assert.equal(api.recoveryRequested(),false);
+});
+test('Lembrar de mim seleciona persistencia; sessao temporaria nao sobrevive a nova aba',async()=>{
+ const {createAuthStorage}=await import('../src/auth-storage.mjs');const memory=()=>{const values=new Map();return {getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)}};
+ const local=memory(),session=memory(),storage=createAuthStorage(local,session);storage.setItem('sdk-token','persistent-fixture');assert.equal(createAuthStorage(local,memory()).getItem('sdk-token'),'persistent-fixture');storage.remember(false);storage.setItem('sdk-token','temporary-fixture');assert.equal(local.getItem('sdk-token'),null);assert.equal(storage.getItem('sdk-token'),'temporary-fixture');assert.equal(createAuthStorage(local,session).getItem('sdk-token'),'temporary-fixture');assert.equal(createAuthStorage(local,memory()).getItem('sdk-token'),null);storage.removeItem('sdk-token');assert.equal(session.getItem('sdk-token'),null);
+});
+test('Navegador sem acesso a storage conserva somente memoria, sem quebrar inicializacao',async()=>{
+ const {createAuthStorage}=await import('../src/auth-storage.mjs');const blocked={getItem(){throw Error('blocked')},setItem(){throw Error('blocked')},removeItem(){throw Error('blocked')}};const store=createAuthStorage(blocked,blocked);assert.equal(store.getItem('sdk-token'),null);store.setItem('sdk-token','local-fixture');assert.equal(store.getItem('sdk-token'),'local-fixture');assert.equal(createAuthStorage(blocked,blocked).getItem('sdk-token'),null);store.removeItem('sdk-token');assert.equal(store.getItem('sdk-token'),null);
+});

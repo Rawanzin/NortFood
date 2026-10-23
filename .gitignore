@@ -1,0 +1,25 @@
+node_modules/
+.build/
+dist/
+.env
+.env.*
+!.env.example
+config.local.js
+supabase/.temp/
+supabase/.branches/
+test-results/
+playwright-report/
+*.log
+
+# Backups de produção, inventários e arquivos parciais contêm dados privados.
+/backups/
+
+# Preview isolado; nunca publicar configuracao do principal por engano.
+/dist-homologacao/
+/dist-hostinger/
+
+# Identidade local da hospedagem e pacotes internos.
+/.netlify/
+/outputs/
+*.zip
+*.dump

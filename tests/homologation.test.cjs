@@ -1,0 +1,18 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{PGlite}=require('@electric-sql/pglite');
+const {configuration}=require('../scripts/homologation-config.cjs'),{bootstrap}=require('../scripts/prepare-homologation.cjs');
+const absent=path.resolve(__dirname,'nonexistent-homologation.env'),values={NORTFOOD_TEST_SUPABASE_URL:'https://aaaaaaaaaaaaaaaaaaaa.supabase.co',NORTFOOD_TEST_SUPABASE_PUBLISHABLE_KEY:'sb_publishable_fixture',NORTFOOD_TEST_SUPABASE_SERVICE_ROLE_KEY:'sb_secret_local_fixture',NORTFOOD_TEST_CONFIRM_DISPOSABLE:'yes'};
+test('Imagem de homologacao e sintetica, pequena e aceita pela validacao real',async()=>{const bytes=await require('./helpers/upload-fixture.cjs').uploadFixture();const {inspectImage}=await import('../supabase/functions/upload-media/media-validation.mjs');assert.deepEqual(inspectImage(bytes,'image/png'),{width:8,height:6,mime:'image/png'});assert.ok(bytes.length<1048576);});
+test('Homologacao exige destino distinto, configuracao explicita e exporta somente campos publicos',()=>{
+ assert.throws(()=>configuration({env:{},file:absent}),/CONFIGURATION_PENDING/);
+ for(const url of ['https://zwkhqahivthzivmuirjr.supabase.co','https://aaaaaaaaaaaaaaaaaaaa.supabase.co/rest/v1','https://untrusted.example'])assert.throws(()=>configuration({env:{...values,NORTFOOD_TEST_SUPABASE_URL:url},file:absent}));
+ assert.throws(()=>configuration({env:{...values,NORTFOOD_TEST_CONFIRM_DISPOSABLE:'no'},file:absent}),/CONFIRMATION_REQUIRED/);
+ assert.throws(()=>configuration({env:{...values,NORTFOOD_TEST_SUPABASE_PUBLISHABLE_KEY:'sb_secret_bad'},file:absent}),/PUBLIC_KEY_INVALID/);
+ const c=configuration({env:values,file:absent});assert.deepEqual(Object.keys(c.publicConfig),['mode','supabaseUrl','publishableKey','appUrl']);assert.equal(c.publicConfig.appUrl,'http://localhost:4174');assert.equal(JSON.stringify(c.publicConfig).includes('sb_secret'),false);
+ const serve=fs.readFileSync(path.resolve(__dirname,'../scripts/serve.cjs'),'utf8');assert.match(serve,/homologation\?4174:4173/);
+});
+test('Bootstrap isolado aplica 001-007 em banco vazio, registra historico e recusa banco com dados',async()=>{
+ const db=new PGlite();try{await db.waitReady;await db.exec(`create role anon nologin;create role authenticated nologin;create role service_role nologin bypassrls;create schema auth;create table auth.users(id uuid primary key,raw_user_meta_data jsonb not null default '{}');create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;create schema storage;create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text,name text);alter table storage.objects enable row level security;create publication supabase_realtime;`);
+ await db.exec(bootstrap());assert.equal((await db.query('select count(*)::int n from supabase_migrations.schema_migrations')).rows[0].n,7);assert.equal((await db.query('select pilot_enabled from public.platform_settings')).rows[0].pilot_enabled,false);assert.equal((await db.query('select count(*)::int n from auth.users')).rows[0].n,0);
+ await db.exec("insert into public.stores(name) values('Preservar loja existente')");await assert.rejects(()=>db.exec(bootstrap()),/HOMOLOGATION_TARGET_NOT_EMPTY/);await db.exec('rollback');assert.equal((await db.query('select name from public.stores')).rows[0].name,'Preservar loja existente');
+ }finally{await db.close()}
+});
