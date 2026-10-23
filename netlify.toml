@@ -1,8 +1,11 @@
 [build]
-command = "pnpm build"
+command = "pnpm lint && pnpm test:release:unit && pnpm check:architecture && pnpm build && pnpm audit:release"
 publish = "dist"
 [build.environment]
 NODE_VERSION = "24"
+PNPM_VERSION = "11.25.0"
+NORTFOOD_PUBLIC_PREVIEW = "yes"
+NORTFOOD_ENABLE_INDEXING = "no"
 
 [context.deploy-preview.environment]
 NORTFOOD_ENABLE_INDEXING = "no"

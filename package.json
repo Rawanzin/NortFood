@@ -30,7 +30,8 @@
     "lint": "node scripts/check-syntax.cjs",
     "test:load:isolated": "node scripts/load-isolated.cjs",
     "audit:release": "node scripts/audit-release.cjs",
-    "test:public": "node scripts/verify-public.cjs"
+    "test:public": "node scripts/verify-public.cjs",
+    "test:release:unit": "node --test tests/auth-lifecycle.test.cjs tests/application-services.test.cjs tests/session-isolation.test.cjs tests/pwa-cache.test.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.117.3",

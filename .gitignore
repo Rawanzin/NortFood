@@ -20,6 +20,7 @@ playwright-report/
 
 # Identidade local da hospedagem e pacotes internos.
 /.netlify/
+/.agents/
 /outputs/
 *.zip
 *.dump
