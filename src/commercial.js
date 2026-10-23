@@ -8,6 +8,7 @@ import {resolveCatalogImages} from './application/catalog-images.js';
 import {snapshotView} from './application/snapshot.js';
 import {sessionCommands} from './application/session-commands.js';
 import {orderWhatsApp} from './application/whatsapp.js';
+import {categoryKey} from '../assets/base-categories.js';
 export function controller(bridge,api){
  const {esc,money,toast,modal,render}=bridge;
  const dining=createDining({...bridge,reload:()=>refresh()},api);window.NortFoodQR=dining;
@@ -167,7 +168,7 @@ export function controller(bridge,api){
   }
   if(f.id==='store-request-form'){await run(()=>commands.rpc('nf_create_store_draft',{p_name:String(form.get('name'))}),'Rascunho da loja criado. Prepare o perfil e o cardápio antes de solicitar aprovação.');bridge.setView('seller');render();return true}
   if(f.id==='store-form'){
-   const store=u.storeId,catalog=await commands.categories(),ids=form.getAll('categories').map(name=>catalog.find(c=>c.name===name)?.id).filter(Boolean),[opens,closes]=String(form.get('hours')).split('-');
+   const store=u.storeId,catalog=await commands.categories(),ids=[...new Set(form.getAll('categories').map(name=>(catalog.find(c=>c.name===name)||catalog.find(c=>categoryKey(c.name)===categoryKey(name)))?.id).filter(Boolean))],[opens,closes]=String(form.get('hours')).split('-');
    const zones=String(form.get('zones')||'').split(/\r?\n/).filter(x=>x.trim()).map(line=>{const [neighborhood,price]=line.split(':');return {neighborhood:neighborhood.trim(),fee_cents:api.cents(price),city:'Porteirinha'}});
    const payload={name:String(form.get('name')),description:String(form.get('about')||''),phone:String(form.get('phone')||''),whatsapp:String(form.get('whatsapp')||''),street:String(form.get('street')||''),number:String(form.get('number')||''),complement:String(form.get('complement')||''),neighborhood:String(form.get('neighborhood')||''),city:String(form.get('city')||'Porteirinha'),opens_at:opens,closes_at:closes,working_days:form.getAll('workingDays').map(Number),pickup_enabled:!!form.get('pickupEnabled'),delivery_enabled:!!form.get('deliveryEnabled'),minimum_cents:api.cents(form.get('minimumOrder')||0),estimate_minutes:form.get('estimateMinutes')?Number(form.get('estimateMinutes')):null,payment_methods:form.getAll('payments').map(label=>Object.keys(paymentNames).find(k=>paymentNames[k]===label)).filter(Boolean),delivery_info:String(form.get('deliveryInfo')||'')};
    Object.assign(payload,window.NortFoodLocation?.readPatch(f)||{});

@@ -27,7 +27,9 @@ async function main(){
   for(const label of labels){await page.getByRole('button',{name:label,exact:true}).click();assert.equal(await page.locator('.category.active').innerText(),label);}
   await page.locator('[data-action=auth]').first().click();await page.locator('#auth-form').waitFor();assert.equal(await page.locator('#auth-confirm-password').count(),1);assert.equal(await page.locator('#auth-phone').getAttribute('required'),'');
   assert.equal(await page.locator('[data-role=customer]').innerText(),'Quero pedir comida');await page.locator('[data-role=seller]').click();assert.equal(await page.locator('#auth-store-name').count(),1);
-  await page.setViewportSize({width:320,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.screenshot({path:path.join(folder,'seller-signup-320.png')});
+  await page.setViewportSize({width:320,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  if(settings.disable_signup)await page.waitForFunction(()=>document.querySelector('#auth-form [role=status]')?.textContent.includes('Novos cadastros aguardam'));
+  await page.screenshot({path:path.join(folder,'seller-signup-320.png'),animations:'disabled'});
   await page.locator('[data-auth-mode=login]').click();await page.locator('[data-action=recover-password]').click();await page.locator('#recover-form').waitFor();assert.equal(await page.locator('#recover-form [type=email]').count(),1);
   await page.locator('[data-action=close-modal]').first().click();
   const manifest=await (await get(new URL('/manifest.webmanifest',origin))).json();
