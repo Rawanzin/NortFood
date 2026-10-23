@@ -9,6 +9,10 @@ test('Migrações PostgreSQL, RLS, checkout transacional e comissões',async t=>
  const admin=uuid(),clientA=uuid(),clientB=uuid(),sellerA=uuid(),sellerB=uuid();
  for(const [id,name] of [[admin,'Admin Teste'],[clientA,'Cliente A'],[clientB,'Cliente B'],[sellerA,'Loja A'],[sellerB,'Loja B']])await db.query('insert into auth.users(id,raw_user_meta_data) values($1,$2)',[id,JSON.stringify({name,role:'admin'})]);
  await db.query('insert into private.admin_users(user_id) values($1)',[admin]);
+ // Esta suíte cobre isolamento entre duas lojas aprovadas. A expansão é explícita,
+ // administrativa e apenas no PostgreSQL descartável; a suíte piloto testa limite 1.
+ await db.query("select set_config('request.jwt.claim.sub',$1,false)",[admin]);
+ await db.query("select public.nf_admin_store_limit(2,'Fixture isolada de duas lojas')");
  async function as(id,fn){await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id||'']);await db.exec('set role '+(id?'authenticated':'anon'));try{return await fn()}finally{await db.exec('reset role')}}
  const call=(name,args)=>db.query(`select public.${name}(${args.map((_,i)=>'$'+(i+1)).join(',')}) value`,args).then(r=>r.rows[0].value);
  const denied=async(id,fn,pattern)=>assert.rejects(()=>as(id,fn),pattern||/permission denied|FORBIDDEN|REQUIRED|TRANSITION/);

@@ -11,7 +11,7 @@ import {orderWhatsApp} from './application/whatsapp.js';
 export function controller(bridge,api){
  const {esc,money,toast,modal,render}=bridge;
  const dining=createDining({...bridge,reload:()=>refresh()},api);window.NortFoodQR=dining;
- let authBusy=false,messageKeys=new WeakMap(),context=null,admin=null,reports={},historyRows=[],historyCursor=null,historyBusy=false,historyDone=false;
+ let authBusy=false,messageKeys=new WeakMap(),context=null,admin=null,reports={},historyRows=[],historyCursor=null,historyBusy=false,historyDone=false,storeDrafts=[];
  let identityRevision=api.sessionRevision?.();
  let storage;try{storage=window.sessionStorage}catch{}
  const checkout=createCheckout({storage});
@@ -23,7 +23,7 @@ export function controller(bridge,api){
   const d=data();if(d.current)bridge.swapCart('guest');
   d.current=null;d.orders=[];d.stores=[];d.conversations=[];d.notifications=[];d.reviews=[];
   d.commissionLedger=[];d.commissionSettlements=[];d.favoriteAccounts={};
-  context=null;admin=null;reports={};historyRows=[];historyCursor=null;historyDone=false;
+  context=null;admin=null;reports={};historyRows=[];historyCursor=null;historyDone=false;storeDrafts=[];
  }
  const enqueueRefresh=createRefreshQueue(performRefresh);
  function refresh(event='MANUAL'){
@@ -34,7 +34,14 @@ export function controller(bridge,api){
  async function performRefresh(event){
   const revision=api.sessionRevision?.(),current=()=>api.sessionRevision?.()===revision;
   try{
-   const [nextContext,loaded]=await Promise.all([api.context(),api.load()]);
+   let nextContext=await api.context();
+   // A confirmação do e-mail pode acontecer em outro dispositivo. O vínculo é criado
+   // pelo servidor, de forma idempotente, sem depender da sessão da tela de cadastro.
+   if(current()&&nextContext?.profile&&nextContext.memberships?.length===0&&nextContext.user?.user_metadata?.requested_store_name){
+    await api.rpc('nf_create_store_draft',{p_name:nextContext.user.user_metadata.requested_store_name});
+    if(!current())return;nextContext=await api.context();
+   }
+   const loaded=await api.load();
    if(!current()){refresh('POLL').catch(()=>{});return;}
    const previous=data().current,owner=nextContext?.profile?.id||'guest';
    const projected=snapshotView(nextContext,loaded,previous,historyRows);
@@ -50,7 +57,7 @@ export function controller(bridge,api){
    const d=data(),u=projected.current;
    if((previous?.id||'guest')!==owner){bridge.swapCart(owner);historyRows=[];historyCursor=null;historyDone=false;reports={};}
    const newOrder=u?.role==='seller'&&u.notifications_enabled!==false&&previous?.id===u.id&&event!=='BOOT'&&projected.latest.some(o=>o.store===u.storeId&&o.backendStatus==='pending'&&!d.orders.some(old=>old.id===o.id));
-   context=nextContext;admin=nextAdmin;d.stores=stores;d.current=u;
+   context=nextContext;admin=nextAdmin;d.stores=stores;d.current=u;storeDrafts=Array.isArray(loaded.storeDrafts)?loaded.storeDrafts:[];
    d.orders=projected.orders;if(detail)d.orders.push(orderView(detail,u));
    d.notifications=projected.notifications;d.conversations=projected.conversations;d.reviews=projected.reviews;
    d.commissionLedger=projected.commissionLedger;d.commissionSettlements=projected.commissionSettlements;
@@ -62,7 +69,7 @@ export function controller(bridge,api){
    if(newOrder)bridge.alertNewOrder?.();
    if(event==='PASSWORD_RECOVERY')bridge.setView('settings');
    if(u&&event==='SIGNED_IN'&&!authBusy&&document.querySelector('#auth-form,[data-auth-confirmation]')){bridge.closeModal();bridge.setView(u.role==='seller'?'seller':u.role==='admin'?'admin':'home');}
-   bridge.connection('connected',loaded.pilotEnabled===false?'Plataforma configurada; pedidos bloqueados até autorização administrativa do piloto.':'');
+   bridge.connection('connected',loaded.pilotEnabled===false?'Você pode acessar sua conta e preparar sua loja. Pedidos aguardam a liberação da loja piloto.':'');
    if(!authBusy&&event!=='BOOT'&&!(event==='PASSWORD_RECOVERY'&&document.querySelector('#password-form'))&&(!document.querySelector('.modal,.drawer,#store-form,input:focus,textarea:focus,select:focus')||!['POLL','DATABASE_CHANGE'].includes(event))){const y=scrollY;render();if(['POLL','DATABASE_CHANGE'].includes(event))scrollTo(0,y)}
    if(event==='PASSWORD_RECOVERY')bridge.showRecovery?.();
   }catch(error){if(!current()){refresh('POLL').catch(()=>{});return;}bridge.connection('error',error.message);if(!['POLL','DATABASE_CHANGE'].includes(event))throw error}
@@ -88,6 +95,15 @@ export function controller(bridge,api){
    return true;
   }
   if(t.dataset.retryCatalog!==undefined){bridge.connection('loading','Carregando estabelecimentos…');render();await refresh('MANUAL');return true;}
+  if(t.dataset.saveStoreDraft!==undefined){
+   requireLogin();const f=document.getElementById('store-form');if(!f)return true;
+   const form=new FormData(f),payload={};
+   for(const name of ['name','about','categories','phone','whatsapp','street','number','complement','neighborhood','city','hours','workingDays','pickupEnabled','deliveryEnabled','zones','estimateMinutes','minimumOrder','payments','deliveryInfo']){
+    payload[name]=['categories','workingDays','payments'].includes(name)?form.getAll(name):['pickupEnabled','deliveryEnabled'].includes(name)?form.has(name):String(form.get(name)||'');
+   }
+   t.disabled=true;try{const old=storeDrafts.find(row=>row.store_id===u.storeId),version=await commands.rpc('nf_save_store_draft',{p_store:u.storeId,p_data:payload,p_version:old?.version||0});storeDrafts=storeDrafts.filter(row=>row.store_id!==u.storeId);storeDrafts.push({store_id:u.storeId,data:payload,version});toast('Rascunho salvo na sua conta. Imagens e localização são salvas em Salvar perfil.');}finally{t.disabled=false;}return true;
+  }
+  if(t.dataset.submitStore!==undefined){await run(()=>commands.rpc('nf_submit_store',{p_store:u.storeId}),'Loja enviada para análise. Ela ainda não está publicada.');return true;}
   if(await dining.click(t))return true;
   if(t.dataset.exportFinance!==undefined){if(!context?.is_admin)throw new Error('Acesso administrativo não autorizado.');const rows=[['tipo','loja','pedido','valor_centavos','data','referencia'],...d.commissionLedger.map(l=>[l.kind,l.store_id,l.order_id,l.amount_cents,l.created_at,l.reason]),...d.commissionSettlements.map(s=>['settlement',s.store_id,s.order_id,s.amount_cents,s.paid_at,s.reference])],csv=rows.map(row=>row.map(v=>{const raw=String(v??''),safe=typeof v==='number'?raw:/^\s*[=+@-]/.test(raw)?"'"+raw:raw;return '"'+safe.replaceAll('"','""')+'"'}).join(';')).join('\r\n'),url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='nortfood-comissoes.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return true}
   if(t.dataset.loadHistory!==undefined){requireLogin();if(historyBusy)return true;if(historyDone){toast('Nenhum pedido anterior.');return true}historyBusy=true;try{const owner=u.id,known=new Set(d.orders.map(o=>o.id));let added=0,pages=0;do{const rows=await commands.rpc('nf_order_history',{p_before:historyCursor?.created_at||null,p_before_id:historyCursor?.id||null,p_limit:50});if(data().current?.id!==owner)return true;const last=rows.at(-1);if(last)historyCursor={created_at:last.created_at,id:last.id};historyDone=rows.length<50;for(const row of rows)if(!known.has(row.id)){known.add(row.id);historyRows.push(orderView(row,u));added++}pages++;}while(!added&&!historyDone&&pages<10);await refresh();toast(added?'Pedidos anteriores carregados.':historyDone?'Nenhum pedido anterior.':'Histórico consultado. Continue para ver anteriores.');}finally{historyBusy=false}return true}
@@ -119,7 +135,18 @@ export function controller(bridge,api){
   const d=data(),u=d.current;if(f.id==='auth-form'){
    if(authBusy)return true;authBusy=true;try{
    const email=String(form.get('identifier')||'').trim(),password=String(form.get('password')||'');if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Informe um e-mail válido.');
-   if(bridge.authMode()==='register'){if(!form.get('consent'))throw new Error('Aceite os termos para cadastrar.');const name=String(form.get('name')||'').trim();if(!name)throw new Error('Informe seu nome.');const phone=String(form.get('phone')||'').replace(/\D/g,'');if(phone&&phone.length<10||phone.length>13)throw new Error('Confira o telefone com DDD.');const signedIn=await api.register(email,password,name,phone,bridge.authRole()==='seller'?String(form.get('storeName')||''):'');if(!signedIn){bridge.authConfirmation(email);return true;}toast('Conta cadastrada. Você já está conectado.');if(bridge.authRole()==='seller')await api.rpc('nf_request_store',{p_name:String(form.get('storeName')||'')});}
+   if(bridge.authMode()==='register'){
+    if(!form.get('consent'))throw new Error('Aceite os termos para cadastrar.');
+    const name=String(form.get('name')||'').trim(),phone=String(form.get('phone')||'').replace(/\D/g,'');
+    if(name.length<3||name.length>80)throw new Error('Informe seu nome completo, com até 80 caracteres.');
+    if(!/^(55)?[1-9][0-9]9[0-9]{8}$/.test(phone))throw new Error('Informe um celular brasileiro válido com DDD.');
+    if(password!==String(form.get('confirmPassword')||''))throw new Error('A confirmação da senha não confere.');
+    const storeName=bridge.authRole()==='seller'?String(form.get('storeName')||'').trim():'';
+    if(bridge.authRole()==='seller'&&(!storeName||storeName.length>80))throw new Error('Informe o nome da loja, com até 80 caracteres.');
+    const signedIn=await api.register(email,password,name,phone,storeName);
+    if(!signedIn){bridge.authConfirmation(email);return true;}
+    toast('Conta cadastrada. Você já está conectado.');
+   }
    else {await api.login(email,password,!!form.get('remember'));}
    await refresh();if(!d.current)await refresh('SIGNED_IN');
    if(!d.current)throw new Error('A conta foi autenticada, mas o perfil ainda não pôde ser carregado. Confira a conexão e tente novamente.');
@@ -138,14 +165,17 @@ export function controller(bridge,api){
    const coordinates=bridge.coordinates(),payload={label:String(form.get('label')||'Endereço'),street:String(form.get('street')),number:String(form.get('number')),complement:String(form.get('complement')||''),reference:String(form.get('reference')||''),neighborhood:String(form.get('neighborhood')||''),city:'Porteirinha',state:'MG',is_primary:true,...(f.id==='delivery-address-form'&&coordinates?{latitude:coordinates.lat,longitude:coordinates.lng}:{})};
    const id=await commands.rpc('nf_save_address',{p_id:bridge.editingAddress()||null,p_data:payload});await refresh();const a=bridge.addresses().find(x=>x.id===id);bridge.applyAddress(a);bridge.closeModal();if(bridge.addressCheckout())bridge.showCheckoutPayment();else{bridge.setView('addresses');render()}toast('Endereço confirmado no servidor.');return true;
   }
-  if(f.id==='store-request-form'){await run(()=>commands.rpc('nf_request_store',{p_name:String(form.get('name'))}),'Solicitação enviada para aprovação.');bridge.setView('seller');render();return true}
+  if(f.id==='store-request-form'){await run(()=>commands.rpc('nf_create_store_draft',{p_name:String(form.get('name'))}),'Rascunho da loja criado. Prepare o perfil e o cardápio antes de solicitar aprovação.');bridge.setView('seller');render();return true}
   if(f.id==='store-form'){
    const store=u.storeId,catalog=await commands.categories(),ids=form.getAll('categories').map(name=>catalog.find(c=>c.name===name)?.id).filter(Boolean),[opens,closes]=String(form.get('hours')).split('-');
    const zones=String(form.get('zones')||'').split(/\r?\n/).filter(x=>x.trim()).map(line=>{const [neighborhood,price]=line.split(':');return {neighborhood:neighborhood.trim(),fee_cents:api.cents(price),city:'Porteirinha'}});
    const payload={name:String(form.get('name')),description:String(form.get('about')||''),phone:String(form.get('phone')||''),whatsapp:String(form.get('whatsapp')||''),street:String(form.get('street')||''),number:String(form.get('number')||''),complement:String(form.get('complement')||''),neighborhood:String(form.get('neighborhood')||''),city:String(form.get('city')||'Porteirinha'),opens_at:opens,closes_at:closes,working_days:form.getAll('workingDays').map(Number),pickup_enabled:!!form.get('pickupEnabled'),delivery_enabled:!!form.get('deliveryEnabled'),minimum_cents:api.cents(form.get('minimumOrder')||0),estimate_minutes:form.get('estimateMinutes')?Number(form.get('estimateMinutes')):null,payment_methods:form.getAll('payments').map(label=>Object.keys(paymentNames).find(k=>paymentNames[k]===label)).filter(Boolean),delivery_info:String(form.get('deliveryInfo')||'')};
    Object.assign(payload,window.NortFoodLocation?.readPatch(f)||{});
    for(const name of ['logo','cover']){const file=f.elements[name]?.files?.[0];if(file)payload[name+'_url']=await commands.upload(store,file)}
-   await run(()=>commands.rpc('nf_save_store',{p_id:store,p_data:payload,p_categories:ids,p_zones:zones}),Object.hasOwn(payload,'latitude')?(payload.latitude===null?'Localização removida.':'Localização salva.'):'Perfil salvo.');return true;
+   await commands.rpc('nf_save_store',{p_id:store,p_data:payload,p_categories:ids,p_zones:zones});
+   const draft=storeDrafts.find(row=>row.store_id===store);
+   if(draft)await commands.rpc('nf_save_store_draft',{p_store:store,p_data:{},p_version:draft.version});
+   await refresh();toast((Object.hasOwn(payload,'latitude')?(payload.latitude===null?'Localização removida. ':'Localização salva. '):'')+'Perfil salvo no servidor.');render();return true;
   }
   if(f.id==='product-form'){
    const s=d.stores.find(s=>s.id===u.storeId),old=s.products[Number(f.dataset.index)],lines=String(form.get('extras')||'').split(/\r?\n/).filter(l=>l.trim()),options=lines.map(line=>{const match=line.match(/^(.+):([^:]+)$/);if(!match)throw new Error('Adicionais: use nome:preço.');return {name:match[1].trim(),price_cents:api.cents(match[2])}}),groups=options.length?[{name:String(form.get('groupName')||'Adicionais'),min_choices:Number(form.get('minChoices')||0),max_choices:Number(form.get('maxChoices')||options.length),options}]:[];
@@ -167,6 +197,7 @@ export function controller(bridge,api){
   if(f.id==='review-form'){await run(()=>commands.rpc('nf_review',{p_order:f.dataset.order,p_rating:Number(form.get('rating')),p_body:String(form.get('text'))}),'Avaliação registrada.');return true}
   if(f.id==='admin-store-form'){await run(()=>commands.rpc('nf_admin_store',{p_store:f.dataset.store,p_status:String(form.get('status')),p_reason:String(form.get('reason'))}),'Decisão auditada.');return true}
   if(f.id==='admin-rate-form'){await run(()=>commands.rpc('nf_admin_rate',{p_bps:api.cents(form.get('rate')),p_reason:String(form.get('reason'))}),'Taxa alterada para novos pedidos.');return true}
+  if(f.id==='admin-store-limit-form'){await run(()=>commands.rpc('nf_admin_store_limit',{p_limit:Number(form.get('limit')),p_reason:String(form.get('reason'))}),'Limite de lojas atualizado e auditado.');return true}
   if(f.id==='commission-form'){let amount=String(form.get('amount')),negative=amount.startsWith('-');if(negative)amount=amount.slice(1);const value=api.cents(amount)*(negative?-1:1);await run(()=>commands.rpc(form.get('kind')==='settle'?'nf_admin_settle':'nf_admin_adjust',form.get('kind')==='settle'?{p_order:f.dataset.order,p_amount:value,p_key:f.dataset.key,p_reference:String(form.get('reference')),p_reason:String(form.get('reason'))}:{p_order:f.dataset.order,p_amount:value,p_reason:String(form.get('reason'))}),'Lançamento financeiro registrado.');return true}
   return false;
  }
@@ -176,5 +207,5 @@ export function controller(bridge,api){
   if(!orderWhatsApp(order,store))return '';
   return '<section class="dash-card"><div class="dash-card-body"><h2>Contato pelo WhatsApp</h2><p>O pedido permanece registrado no NortFood. Aguarde o aceite da loja no acompanhamento. Abrir o WhatsApp não confirma envio, leitura ou aceite.</p><div class="detail-actions"><button class="btn outline" data-whatsapp-order="'+esc(order.id)+'">Abrir WhatsApp da loja</button><button class="btn outline" data-copy-whatsapp="'+esc(order.id)+'">Copiar resumo completo</button></div><small>O link inclui produtos e total registrado. Endereço e observações pessoais só entram no resumo completo que você escolher copiar e compartilhar.</small></div></section>';
  }
- return {refresh,click,submit,orderActions,financePage,adminPage,whatsappActions,context:()=>context};
+ return {refresh,click,submit,orderActions,financePage,adminPage,whatsappActions,context:()=>context,draftFor:id=>storeDrafts.find(row=>row.store_id===id)};
 }

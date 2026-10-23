@@ -8,7 +8,7 @@ function inspect(root='dist') {
  const config=match?JSON.parse(match[1]):{};
  if(config.supabaseUrl!=='https://zwkhqahivthzivmuirjr.supabase.co')issues.push('PRODUCTION_BACKEND_MISMATCH');
  if(!config.appUrl?.startsWith('https://'))issues.push('HTTPS_REQUIRED');
- if(config.publicPreview!==true)issues.push('COMMERCIAL_APPROVAL_REQUIRED');
+ if(config.publicPreview!==true&&config.publicAccounts!==true)issues.push('PUBLIC_ENTRY_CONFIGURATION_REQUIRED');
  const report={checkedAt:new Date().toISOString(),root:path.resolve(root),passed:issues.length===0,issues,files:files.length,bytes:files.reduce((n,f)=>n+f.bytes,0),inventory:files};
  return report;
 }

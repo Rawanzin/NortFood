@@ -30,11 +30,11 @@ test('Commercial categories use backend rows, preserve selection and filter stor
    window.__fixture={auth:{onAuthStateChange(){},getUser:async()=>({data:{user:null}})},from:()=>({select:()=>({eq:async()=>({data:categories})})}),rpc:async name=>({data:name==='nf_catalog'?[{id:'store-a',name:'Loja sintética',status:'approved',opens_at:'11:00',closes_at:'22:00',categories:[{id:'cat-a',name:'Lanches'}],products:[],zones:[],payment_methods:['cash']}]:false})};
   });
   await page.goto('http://127.0.0.1:'+app.address().port);await page.locator('[data-cat="cat-a"]').waitFor();
-  assert.equal(await page.locator('.categories .category').count(),9);assert.equal(await page.locator('.categories .category').first().innerText(),'Todos');assert.equal(await page.locator('.category-scroll.has-more').count(),1);
+  assert.equal(await page.locator('.categories .category').count(),19);assert.equal(await page.locator('.categories .category').first().innerText(),'Todos');assert.equal(await page.locator('.category-scroll.has-more').count(),1);
   await page.locator('[data-cat="cat-a"]').click();assert.equal(await page.locator('[data-cat="cat-a"]').getAttribute('class'),'category active');assert.equal(await page.locator('.store-card').count(),1);
   await page.locator('[data-cat="cat-b"]').click();assert.equal(await page.locator('.store-card').count(),0);assert.equal(await page.locator('[data-discovery-category]').inputValue(),'cat-b');
   const empty=await browser.newPage({serviceWorkers:'block'});await empty.route('**/assets/nortfood-backend.js',r=>r.fulfill({contentType:'text/javascript',body:code}));
   await empty.addInitScript(()=>{window.__fixture={auth:{onAuthStateChange(){},getUser:async()=>({data:{user:null}})},from:()=>({select:()=>({eq:async()=>({data:[]})})}),rpc:async name=>({data:name==='nf_catalog'?[]:false})}});
-  await empty.goto('http://127.0.0.1:'+app.address().port);await empty.locator('.category-empty').waitFor();assert.equal(await empty.locator('.categories .category').count(),1);assert.equal(await empty.locator('.category-scroll.has-more').count(),0);
+  await empty.goto('http://127.0.0.1:'+app.address().port);await empty.locator('[data-cat=all]').waitFor();assert.equal(await empty.locator('.categories .category').count(),12);await empty.locator('.category').filter({hasText:'Marmitas'}).click();assert.equal(await empty.locator('.store-card').count(),0);assert.match(await empty.locator('.empty').innerText(),/Ainda não há lojas disponíveis em Marmitas/);assert.equal(await empty.locator('.category.active').innerText(),'Marmitas');
  }finally{await browser?.close();await new Promise(r=>app.close(r));}
 });
