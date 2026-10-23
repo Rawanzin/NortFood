@@ -195,3 +195,5 @@ body{padding-bottom:calc(80px + env(safe-area-inset-bottom))}
 
 /* Contraste de texte pequeno sobre fundos claros, sem alterar logos ou fotos. */
 .text-btn,.btn.soft,.product-price{color:#b82b36}
+/* Os dois caminhos de cadastro permanecem legíveis em 320px. */
+.auth-role-switch button{white-space:normal;min-width:0;min-height:48px;line-height:1.35;flex:1}

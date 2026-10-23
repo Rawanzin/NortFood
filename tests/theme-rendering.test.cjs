@@ -28,9 +28,9 @@ for(const system of ['dark','light'])test('Painted themes follow selection with 
  }finally{await browser?.close();await new Promise(r=>app.close(r));}
 });
 
-test('Todos source and optimized image retain real alpha, without a rectangular matte',async()=>{
+test('Official category sources and optimized images retain real alpha, without a rectangular matte',async()=>{
  const m=await imageReader();
- for(const file of ['assets/categories/categoria-todos.png','assets/optimized/categoria-todos.webp']){
+ for(const file of ['assets/categories/categoria-todos.png',...['todos','acai','lanches','pizza','doces','salgados','sorvetes','refeicoes','bebidas'].map(name=>'assets/optimized/categoria-'+name+'.webp')]){
   m.ImageMagick.read(await fs.readFile(file),image=>image.getPixels(p=>{
    const rgba=p.toByteArray(0,0,image.width,image.height,'RGBA');let transparent=0,visible=0;
    for(let i=3;i<rgba.length;i+=4){if(rgba[i]===0)transparent++;if(rgba[i]>200)visible++;}

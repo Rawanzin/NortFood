@@ -4,7 +4,8 @@ publish = "dist"
 [build.environment]
 NODE_VERSION = "24"
 PNPM_VERSION = "11.25.0"
-NORTFOOD_PUBLIC_PREVIEW = "yes"
+NORTFOOD_PUBLIC_PREVIEW = "no"
+NORTFOOD_PUBLIC_ACCOUNTS = "yes"
 NORTFOOD_ENABLE_INDEXING = "no"
 
 [context.deploy-preview.environment]

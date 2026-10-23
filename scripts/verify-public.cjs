@@ -7,14 +7,14 @@ async function main(){
   const passed=r.status===expected&&check(r,body);results.push({name,path,status:r.status,expected,passed});return body;
  };
  const html=await run('public_shell','/',200,(r,s)=>s.includes('<title>NortFood</title>')&&r.headers.get('x-content-type-options')==='nosniff'&&r.headers.get('content-security-policy')?.includes("frame-ancestors 'none'"));
- const script=await run('public_config','/config.js',200,(r,s)=>r.headers.get('cache-control')==='no-store'&&s.includes('"publicPreview":true')&&s.includes('zwkhqahivthzivmuirjr')&&!s.includes('sb_secret_'));
+ const script=await run('public_config','/config.js',200,(r,s)=>r.headers.get('cache-control')==='no-store'&&s.includes('"publicAccounts":true')&&!s.includes('"publicPreview":true')&&s.includes('zwkhqahivthzivmuirjr')&&!s.includes('sb_secret_'));
  const match=script.match(/Object\.freeze\((\{.*\})\)/);if(!match)throw Error('PUBLIC_CONFIG_INVALID');const config=JSON.parse(match[1]);
  results.push({name:'canonical_matches_official_origin',passed:html.includes('rel="canonical" href="'+config.appUrl+'/"')&&config.appUrl==='https://nortfood.netlify.app'});
  await run('service_worker','/sw.js',200,(r,s)=>r.headers.get('cache-control')==='no-cache'&&!s.includes('__NORTFOOD_RELEASE__')&&s.includes('isSupabaseOrPrivate'));
  const manifest=JSON.parse(await run('manifest','/manifest.webmanifest',200,(r,s)=>r.headers.get('content-type')?.includes('manifest+json')));
  results.push({name:'standalone_manifest',passed:manifest.name==='NortFood'&&manifest.display==='standalone'&&manifest.id==='/'&&manifest.scope==='/'});
- for(const icon of manifest.icons){const r=await fetch(new URL(icon.src,origin));const b=Buffer.from(await r.arrayBuffer());results.push({name:'icon_'+icon.sizes+'_'+icon.purpose,passed:r.status===200&&b.subarray(1,4).toString()==='PNG'&&icon.sizes===b.readUInt32BE(16)+'x'+b.readUInt32BE(20)});}
- for(const path of ['/app.js','/styles.css','/refinements.css','/theme.js','/theme.css','/pwa.js','/offline.html','/assets/nortfood-backend.js','/assets/nortfood-og.png','/robots.txt','/sitemap.xml','/release.json'])await run('asset:'+path,path,200);
+ for(const icon of manifest.icons){const r=await fetch(new URL(icon.src,origin));const b=Buffer.from(await r.arrayBuffer());const valid=icon.type==='image/svg+xml'?b.toString().includes('fill="#ffffff"')&&b.toString().includes('data:image/png;base64,'):b.subarray(1,4).toString()==='PNG'&&icon.sizes===b.readUInt32BE(16)+'x'+b.readUInt32BE(20);results.push({name:'icon_'+icon.sizes+'_'+icon.purpose,passed:r.status===200&&valid});}
+ for(const path of ['/app.js','/styles.css','/refinements.css','/theme.js','/theme.css','/pwa.js','/offline.html','/assets/nortfood-backend.js','/assets/base-categories.js','/assets/nortfood-og.png','/robots.txt','/sitemap.xml','/release.json'])await run('asset:'+path,path,200);
  for(const path of ['/.env','/.env.homologacao','/.git/config','/src/backend.js','/supabase/config.toml','/docs/PILOTO.md','/backups/test.sql','/nonexistent-launch-route'])await run('private_or_missing:'+path,path,404);
  const headers={apikey:config.publishableKey};
  for(const [name,route,expected,validate] of [

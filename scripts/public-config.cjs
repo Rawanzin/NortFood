@@ -8,6 +8,7 @@ function publicConfig(production=false){
  if(appUrl){let parsed;try{parsed=new URL(appUrl)}catch{throw Error('URL pública do NortFood inválida.')}if(parsed.username||parsed.password||parsed.pathname!=='/'||parsed.search||parsed.hash||!(parsed.protocol==='https:'||parsed.protocol==='http:'&&['localhost','127.0.0.1'].includes(parsed.hostname)))throw Error('URL pública do NortFood deve ser uma origem HTTPS, ou HTTP somente em localhost, sem credenciais, caminho, query ou fragmento.');}
  const result={mode:'commercial',supabaseUrl:url,publishableKey:key,appUrl:appUrl?new URL(appUrl).origin:''};
  if(process.env.NORTFOOD_PUBLIC_PREVIEW==='yes')result.publicPreview=true;
+ if(process.env.NORTFOOD_PUBLIC_ACCOUNTS==='yes')result.publicAccounts=true;
  if(process.env.NORTFOOD_ENABLE_INDEXING==='yes'){if(!require('./site-artifacts.cjs').publicOrigin(result))throw Error('Indexacao exige dominio HTTPS real.');result.indexingEnabled=true;}
  const measurementId=process.env.NORTFOOD_GA4_MEASUREMENT_ID||'';
  if(measurementId){if(!/^G-[A-Z0-9]{5,20}$/.test(measurementId))throw Error('Measurement ID do GA4 invalido.');if(process.env.NORTFOOD_GA4_AUTOMATIC_MEASUREMENT_DISABLED==='yes'&&require('./site-artifacts.cjs').publicOrigin(result))result.analyticsMeasurementId=measurementId;}

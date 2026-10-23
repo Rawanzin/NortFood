@@ -2,7 +2,7 @@
 
 Indicação expressa do responsável nesta execução: **DanBurguer**, e-mail informado **Danburguer@gmail.com**. O e-mail ainda não foi verificado pelo Auth. Esta ficha permanece local e não integra a branch pública.
 
-O Supabase principal não possui loja, produto, categoria, usuário Auth, perfil, associação comercial ou administrador cadastrado, conforme consulta real somente leitura em 23/10/2026. Nenhuma loja foi escolhida aleatoriamente ou aprovada por aproximação de nome.
+Na conferência após a migração 008, o Supabase principal possui 11 categorias editoriais permanentes e nenhuma loja, produto, conta Auth ou administrador. O limite de lojas aprovadas é 1 e pedidos permanecem bloqueados. Nenhuma loja foi escolhida aleatoriamente ou aprovada por aproximação de nome.
 
 Dados indispensáveis ainda não fornecidos: WhatsApp oficial com DDD; cardápio real e preços/adicionais; endereço; horários; retirada/entrega, bairros atendidos e frete; pagamentos aceitos. Campos ausentes não foram preenchidos com exemplos.
 

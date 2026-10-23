@@ -20,7 +20,7 @@ test('Public shell loads before remote catalog; initial controls wait for identi
     releaseBackend();
     await page.evaluate(()=>window.__release());await page.locator('[data-retry-catalog]').waitFor();
     assert.equal(await page.locator('#app').evaluate(element=>element.inert),false);assert.match(await page.locator('.empty').innerText(),/Não foi possível carregar/);
-    await page.locator('[data-retry-catalog]').click();await page.waitForFunction(()=>document.querySelector('.empty')?.textContent.includes('Nenhuma loja encontrada'));
+    await page.locator('[data-retry-catalog]').click();await page.waitForFunction(()=>document.querySelector('.empty')?.textContent.includes('Nenhuma loja disponível'));
     assert.deepEqual(errors,[]);
   }finally{await browser?.close();await new Promise(r=>app.close(r));}
 });
