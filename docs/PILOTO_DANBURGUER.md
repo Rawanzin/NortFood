@@ -1,15 +1,18 @@
-# DanBurguer — preparação do piloto
+# Dan Burguer — cadastro oficial e homologação
 
-Indicação expressa do responsável nesta execução: **DanBurguer**, e-mail informado **Danburguer@gmail.com**. O e-mail ainda não foi verificado pelo Auth. Esta ficha permanece local e não integra a branch pública.
+Estado remoto conferido em 23/10/2026 no Supabase principal `zwkhqahivthzivmuirjr`.
+Loja única: `40bac4d9-2e3c-4f1d-b33b-ab9628176136`, nome **Dan Burguer**. Status `draft`, pausada, sem entrega ou retirada liberada e sem pagamentos presumidos. Piloto global desativado; limite de uma loja aprovada preservado.
 
-Na conferência após a migração 008, o Supabase principal possui 11 categorias editoriais permanentes e nenhuma loja, produto, conta Auth ou administrador. O limite de lojas aprovadas é 1 e pedidos permanecem bloqueados. Nenhuma loja foi escolhida aleatoriamente ou aprovada por aproximação de nome.
+Foram gravados 46 produtos: 20 lanches, 4 mini pizzas, 9 jarras de suco e 13 bebidas (6 alcoólicas separadas). Todos os nomes, preços e descrições foram comparados com o manifesto oficial, item por item, após leitura remota. Há 20 grupos e 220 opções de adicionais, 11 por lanche. Ingredientes removíveis estruturados preservam as quantidades do cardápio. Remoção não dá desconto; a taxa de substituição não é cobrada automaticamente.
 
-Dados indispensáveis ainda não fornecidos: WhatsApp oficial com DDD; cardápio real e preços/adicionais; endereço; horários; retirada/entrega, bairros atendidos e frete; pagamentos aceitos. Campos ausentes não foram preenchidos com exemplos.
+O endereço, CEP e horários fornecidos estão gravados. Não foram inventados bairro, coordenadas ou fotos. O telefone `+55 38 9145-5998` foi conservado como informação pendente; não passou a ser WhatsApp. O campo WhatsApp permanece vazio. R$ 2,00 de entrega e R$ 3,00 de troca são referências editáveis, sem cobertura ou cobrança automática presumida.
 
-O endereço Gmail identifica o contato informado; não configura um serviço de envio de e-mails. SMTP próprio está desativado no Supabase. O remetente e acesso ao provedor devem ser autorizados pelo fluxo protegido do serviço, sem colocar credenciais nesta ficha ou no chat.
+Os 46 produtos estão indisponíveis até conferência de estoque pelo responsável. Além disso, 9 sucos possuem restrição de preço pendente, e 6 bebidas alcoólicas têm restrição de venda no servidor. Mesmo alterar disponibilidade não contorna essas restrições no checkout. O responsável pode editar/salvar o preço e confirmar cada jarra no painel. Não há liberação de álcool nesta implementação.
 
-Após os dados estarem disponíveis: verificar a conta do responsável pelo Auth, usar o cadastro comercial existente para criar a loja e sua associação, cadastrar o cardápio e a cobertura reais, homologar com identidades de teste identificadas e aprovar exclusivamente o UUID verificado da DanBurguer. Não aprovar outras lojas. Usar as RPCs existentes para status e piloto, preservando registro administrativo.
+Contato informado: **Danburguer@gmail.com**. Foi preparado um convite interno privado para reivindicar o vínculo. Nenhuma associação foi concedida: ainda há zero contas Auth. O RPC compara exclusivamente o e-mail da identidade Auth efetivamente confirmado, nunca metadados editáveis ou texto informado no frontend. Uma conta de outro estabelecimento não consegue reivindicar ou editar a loja.
 
-Ativar o piloto somente após testes autenticados entre cliente/vendedor/terceiro, preços/adicionais/frete no servidor, idempotência e recuperação de confirmação, recebimento no painel, status, Storage e Realtime quando usados. Abrir WhatsApp não demonstra envio, recebimento, leitura, pagamento ou aceite.
+Administrador indicado: **kevenrawan@gmail.com**. Conta ainda inexistente no Auth; nenhum privilégio foi concedido. A designação nesta ficha não serve como prova de identidade. Após autenticação e confirmação reais, conferir UUID e autorização antes da concessão protegida de administrador. Não existe promoção automática por nome, e-mail ou parâmetros de URL.
 
-O controle administrativo existente permite aprovar outras lojas futuramente. Esta indicação nominal não concede acesso administrativo à conta do estabelecimento.
+Pendências comerciais: WhatsApp efetivo, telefone, confirmação do proprietário e estoque, bairro/cobertura e frete por zona, retirada, preparo, pagamentos, preço das jarras, regra de troca de ingrediente e imagens oficiais. A loja não aparece no catálogo público enquanto estiver em rascunho. A leitura do catálogo completo pelo proprietário foi validada em PostgreSQL isolado; acesso do proprietário ao ambiente remoto continua pendente de Auth.
+
+Importação: manifesto `supabase/catalogs/dan-burguer.json`; gerador transacional `scripts/catalog-import.cjs`. O recibo privado garante que repetir a mesma fonte não sobrescreva edições posteriores. Não executar a importação como migração nem reaplicar versões registradas. Backup lógico dos dados conferidos em `test-results/auth-dan/remote-audit.json`; recuperação em `docs/RECUPERACAO_AUTH_DAN_20261023.md`. Esses arquivos locais não integram a publicação estática.

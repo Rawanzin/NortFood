@@ -10,7 +10,8 @@ export function createCartStorage(storage) {
         if (saved?.accounts && typeof saved.accounts === 'object' && !Array.isArray(saved.accounts)) {
           for (const [owner, rows] of Object.entries(saved.accounts)) {
             if (owner === '__proto__' || !Array.isArray(rows)) continue;
-            accounts[owner] = rows.filter(row => row && typeof row.pid === 'string' && Number.isInteger(row.qty) && row.qty >= 1 && row.qty <= 20).slice(0,40);
+            accounts[owner] = rows.filter(row => row && typeof row.pid === 'string' && Number.isInteger(row.qty) && row.qty >= 1 && row.qty <= 20 &&
+              (row.removedIngredients === undefined || Array.isArray(row.removedIngredients) && row.removedIngredients.length <= 30 && row.removedIngredients.every(value => typeof value === 'string' && value.length <= 80))).slice(0,40);
           }
         }
       } catch { /* a corrupt journal must not prevent browsing or login */ }

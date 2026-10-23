@@ -12,8 +12,8 @@ import {categoryKey} from '../assets/base-categories.js';
 export function controller(bridge,api){
  const {esc,money,toast,modal,render}=bridge;
  const dining=createDining({...bridge,reload:()=>refresh()},api);window.NortFoodQR=dining;
- let authBusy=false,messageKeys=new WeakMap(),context=null,admin=null,reports={},historyRows=[],historyCursor=null,historyBusy=false,historyDone=false,storeDrafts=[];
- let identityRevision=api.sessionRevision?.();
+ let authBusy=false,messageKeys=new WeakMap(),context=null,admin=null,reports={},historyRows=[],historyCursor=null,historyBusy=false,historyDone=false,storeDrafts=[],storeSetups=[];
+ let identityRevision=api.sessionRevision?.(),invitationCheckedFor=null;
  let storage;try{storage=window.sessionStorage}catch{}
  const checkout=createCheckout({storage});
  const {financePage}=createFinance({data:()=>data(),getReports:()=>reports,money,esc});
@@ -24,7 +24,7 @@ export function controller(bridge,api){
   const d=data();if(d.current)bridge.swapCart('guest');
   d.current=null;d.orders=[];d.stores=[];d.conversations=[];d.notifications=[];d.reviews=[];
   d.commissionLedger=[];d.commissionSettlements=[];d.favoriteAccounts={};
-  context=null;admin=null;reports={};historyRows=[];historyCursor=null;historyDone=false;storeDrafts=[];
+  invitationCheckedFor=null;context=null;admin=null;reports={};historyRows=[];historyCursor=null;historyDone=false;storeDrafts=[];storeSetups=[];
  }
  const enqueueRefresh=createRefreshQueue(performRefresh);
  function refresh(event='MANUAL'){
@@ -38,6 +38,7 @@ export function controller(bridge,api){
    let nextContext=await api.context();
    // A confirmação do e-mail pode acontecer em outro dispositivo. O vínculo é criado
    // pelo servidor, de forma idempotente, sem depender da sessão da tela de cadastro.
+   if(current()&&nextContext?.profile&&nextContext.user?.email_confirmed_at&&nextContext.memberships?.length===0&&invitationCheckedFor!==nextContext.user.id){const claimed=await api.rpc('nf_claim_store_invitation');if(!current())return;invitationCheckedFor=nextContext.user.id;if(claimed)nextContext=await api.context();}
    if(current()&&nextContext?.profile&&nextContext.memberships?.length===0&&nextContext.user?.user_metadata?.requested_store_name){
     await api.rpc('nf_create_store_draft',{p_name:nextContext.user.user_metadata.requested_store_name});
     if(!current())return;nextContext=await api.context();
@@ -58,7 +59,7 @@ export function controller(bridge,api){
    const d=data(),u=projected.current;
    if((previous?.id||'guest')!==owner){bridge.swapCart(owner);historyRows=[];historyCursor=null;historyDone=false;reports={};}
    const newOrder=u?.role==='seller'&&u.notifications_enabled!==false&&previous?.id===u.id&&event!=='BOOT'&&projected.latest.some(o=>o.store===u.storeId&&o.backendStatus==='pending'&&!d.orders.some(old=>old.id===o.id));
-   context=nextContext;admin=nextAdmin;d.stores=stores;d.current=u;storeDrafts=Array.isArray(loaded.storeDrafts)?loaded.storeDrafts:[];
+   context=nextContext;admin=nextAdmin;d.stores=stores;d.current=u;storeDrafts=Array.isArray(loaded.storeDrafts)?loaded.storeDrafts:[];storeSetups=Array.isArray(loaded.storeSetups)?loaded.storeSetups:[];
    d.orders=projected.orders;if(detail)d.orders.push(orderView(detail,u));
    d.notifications=projected.notifications;d.conversations=projected.conversations;d.reviews=projected.reviews;
    d.commissionLedger=projected.commissionLedger;d.commissionSettlements=projected.commissionSettlements;
@@ -69,13 +70,14 @@ export function controller(bridge,api){
    dining.sync(loaded.diningContext||null);
    if(newOrder)bridge.alertNewOrder?.();
    if(event==='PASSWORD_RECOVERY')bridge.setView('settings');
-   if(u&&event==='SIGNED_IN'&&!authBusy&&document.querySelector('#auth-form,[data-auth-confirmation]')){bridge.closeModal();bridge.setView(u.role==='seller'?'seller':u.role==='admin'?'admin':'home');}
+   if(u&&event==='SIGNED_IN'&&!authBusy&&document.querySelector('#auth-form,[data-auth-confirmation]')){bridge.closeModal();bridge.setView(authDestination(u));}
    bridge.connection('connected',loaded.pilotEnabled===false?'Você pode acessar sua conta e preparar sua loja. Pedidos aguardam a liberação da loja piloto.':'');
    if(!authBusy&&event!=='BOOT'&&!(event==='PASSWORD_RECOVERY'&&document.querySelector('#password-form'))&&(!document.querySelector('.modal,.drawer,#store-form,input:focus,textarea:focus,select:focus')||!['POLL','DATABASE_CHANGE'].includes(event))){const y=scrollY;render();if(['POLL','DATABASE_CHANGE'].includes(event))scrollTo(0,y)}
    if(event==='PASSWORD_RECOVERY')bridge.showRecovery?.();
   }catch(error){if(!current()){refresh('POLL').catch(()=>{});return;}bridge.connection('error',error.message);if(!['POLL','DATABASE_CHANGE'].includes(event))throw error}
  }
 
+ function authDestination(u){let intent;try{intent=storage?.getItem('nortfood-auth-intent');storage?.removeItem('nortfood-auth-intent')}catch{}return u.role==='admin'?'admin':u.role==='seller'?'seller':intent==='seller'?'profile':'home';}
  async function run(operation,message){const commands=sessionCommands(api);await operation();commands.assertCurrent();bridge.closeModal();await refresh();commands.assertCurrent();if(message)toast(message)}
  function requireLogin(){if(!api.configured)throw new Error('Supabase não configurado. Pedidos comerciais estão bloqueados.');if(!data().current)throw new Error('Entre na sua conta para continuar.');}
  async function click(t){
@@ -110,7 +112,8 @@ export function controller(bridge,api){
   if(t.dataset.loadHistory!==undefined){requireLogin();if(historyBusy)return true;if(historyDone){toast('Nenhum pedido anterior.');return true}historyBusy=true;try{const owner=u.id,known=new Set(d.orders.map(o=>o.id));let added=0,pages=0;do{const rows=await commands.rpc('nf_order_history',{p_before:historyCursor?.created_at||null,p_before_id:historyCursor?.id||null,p_limit:50});if(data().current?.id!==owner)return true;const last=rows.at(-1);if(last)historyCursor={created_at:last.created_at,id:last.id};historyDone=rows.length<50;for(const row of rows)if(!known.has(row.id)){known.add(row.id);historyRows.push(orderView(row,u));added++}pages++;}while(!added&&!historyDone&&pages<10);await refresh();toast(added?'Pedidos anteriores carregados.':historyDone?'Nenhum pedido anterior.':'Histórico consultado. Continue para ver anteriores.');}finally{historyBusy=false}return true}
   if(t.dataset.reportPeriod){const today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),date=new Date(today+'T12:00:00Z');if(t.dataset.reportPeriod==='week')date.setUTCDate(date.getUTCDate()-((date.getUTCDay()+6)%7));if(t.dataset.reportPeriod==='month')date.setUTCDate(1);reports[u.storeId]=await commands.rpc('nf_report',{p_store:u.storeId,p_from:date.toISOString().slice(0,10),p_to:today});render();return true}
   if(t.dataset.action==='logout'){await api.logout();invalidateIdentity();bridge.setView('home');await refresh();return true}
-  if(t.dataset.action==='google-auth'){t.disabled=true;try{await api.google();}catch(error){const alert=document.getElementById('auth-error');if(alert)alert.textContent=error.message;throw error;}finally{t.disabled=false;}return true}
+  if(t.dataset.action==='google-auth'){if(bridge.authMode()==='register'&&!document.querySelector('#auth-form [name=consent]')?.checked)throw new Error('Aceite os termos antes de continuar com Google.');t.disabled=true;try{await api.google(bridge.authRole());}catch(error){const alert=document.getElementById('auth-error');if(alert)alert.textContent=error.message;throw error;}finally{t.disabled=false;}return true}
+  if(t.dataset.confirmProductPrice){if(!confirm('Confirmo que o preço salvo deste produto está correto para a jarra de 750 ml. A disponibilidade ainda precisa ser ativada no cardápio.'))return true;await run(()=>commands.rpc('nf_confirm_product_price',{p_product:t.dataset.confirmProductPrice}),'Preço confirmado. Você pode revisar a disponibilidade.');return true;}
   if(t.dataset.action==='recover-password'){modal('<div class="modal-head"><h2>Recuperar acesso</h2><button class="close" data-action="close-modal">×</button></div><form id="recover-form" class="form"><label>E-mail<input name="email" type="email" required autocomplete="email"></label><button class="btn">Solicitar recuperação</button></form>');return true}
   if(t.dataset.fav||t.dataset.productFav){requireLogin();const kind=t.dataset.productFav?'products':'stores',id=t.dataset.productFav||t.dataset.fav,list=bridge.favorites(kind);await run(()=>commands.favorite(id,kind,list.includes(id)),'Favoritos atualizados no servidor.');return true}
   if(t.dataset.status||t.dataset.cancel||t.dataset.liveNext){requireLogin();const id=t.dataset.status||t.dataset.cancel||t.dataset.liveOrder,o=d.orders.find(o=>o.id===id);if(!o)throw new Error('Pedido indisponível.');const next=t.dataset.cancel?'cancelled':t.dataset.liveNext||Object.keys(statusNames).find(k=>statusNames[k]===t.dataset.next);await run(()=>commands.rpc('nf_transition',{p_order:id,p_next:next,p_version:o.version}),'Estado confirmado pelo servidor.');return true}
@@ -138,30 +141,26 @@ export function controller(bridge,api){
    const email=String(form.get('identifier')||'').trim(),password=String(form.get('password')||'');if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Informe um e-mail válido.');
    if(bridge.authMode()==='register'){
     if(!form.get('consent'))throw new Error('Aceite os termos para cadastrar.');
-    const name=String(form.get('name')||'').trim(),phone=String(form.get('phone')||'').replace(/\D/g,'');
-    if(name.length<3||name.length>80)throw new Error('Informe seu nome completo, com até 80 caracteres.');
-    if(!/^(55)?[1-9][0-9]9[0-9]{8}$/.test(phone))throw new Error('Informe um celular brasileiro válido com DDD.');
-    if(password!==String(form.get('confirmPassword')||''))throw new Error('A confirmação da senha não confere.');
-    const storeName=bridge.authRole()==='seller'?String(form.get('storeName')||'').trim():'';
-    if(bridge.authRole()==='seller'&&(!storeName||storeName.length>80))throw new Error('Informe o nome da loja, com até 80 caracteres.');
-    const signedIn=await api.register(email,password,name,phone,storeName);
+    try{storage?.setItem('nortfood-auth-intent',bridge.authRole()==='seller'?'seller':'customer')}catch{}
+    const signedIn=await api.register(email,password,'Cliente');
     if(!signedIn){bridge.authConfirmation(email);return true;}
     toast('Conta cadastrada. Você já está conectado.');
    }
    else {await api.login(email,password,!!form.get('remember'));}
    await refresh();if(!d.current)await refresh('SIGNED_IN');
    if(!d.current)throw new Error('A conta foi autenticada, mas o perfil ainda não pôde ser carregado. Confira a conexão e tente novamente.');
-   bridge.closeModal();bridge.setView(d.current.role==='seller'?'seller':d.current.role==='admin'?'admin':'home');render();return true;
+   bridge.closeModal();bridge.setView(authDestination(d.current));render();return true;
    }finally{authBusy=false}
   }
   if(f.id==='recover-form'){await api.recover(String(form.get('email')));bridge.closeModal();toast('Se o e-mail estiver cadastrado, o provedor enviará instruções.');return true}
   requireLogin();const commands=sessionCommands(api);
+  if(f.id==='store-setup-form'){await run(()=>commands.rpc('nf_save_setup',{p_store:u.storeId,p_delivery:api.cents(form.get('deliveryReference')||0),p_replacement:api.cents(form.get('replacementReference')||0),p_owner_confirmed:!!form.get('ownerConfirmed')}),'Referências comerciais salvas. Frete cobrado depende dos bairros configurados.');return true;}
   if(await dining.submit(f,form))return true;
   if(f.id==='report-form'){reports[u.storeId]=await commands.rpc('nf_report',{p_store:u.storeId,p_from:String(form.get('from')),p_to:String(form.get('to'))});render();return true}
   if(f.dataset.adminCategory!==undefined){await run(()=>commands.rpc('nf_admin_category',{p_id:f.dataset.adminCategory||null,p_name:String(form.get('name')),p_active:!!form.get('active')}),'Categoria salva sem apagar relações históricas.');return true}
   if(f.dataset.adminRequest){await run(()=>commands.rpc('nf_admin_request',{p_id:f.dataset.adminRequest,p_status:String(form.get('status')),p_reason:String(form.get('reason'))}),'Solicitação atualizada e auditada.');return true}
   if(f.id==='password-form'){if(String(form.get('newPassword'))!==String(form.get('confirmPassword')))throw new Error('Senhas não conferem.');await run(()=>commands.password(String(form.get('newPassword'))),'Senha atualizada pelo provedor.');return true}
-  if(f.id==='account-form'){await commands.rpc('nf_update_profile',{p_name:String(form.get('name')),p_phone:String(form.get('phone')||''),p_notifications:!!u.notifications_enabled});if(String(form.get('email'))!==u.email){await commands.email(String(form.get('email')));toast('Confirme a alteração de e-mail pelo provedor.')}await refresh();bridge.closeModal();return true}
+  if(f.id==='account-form'){if(f.dataset.checkoutContact!==undefined&&(String(form.get('name')||'').trim().length<2||!/^(55)?[1-9][0-9](?:9[0-9]{8}|[2-5][0-9]{7})$/.test(String(form.get('phone')||'').replace(/\D/g,''))))throw new Error('Confira seu nome e telefone brasileiro com DDD.');await commands.rpc('nf_update_profile',{p_name:String(form.get('name')),p_phone:String(form.get('phone')||''),p_notifications:!!u.notifications_enabled});if(String(form.get('email'))!==u.email){await commands.email(String(form.get('email')));toast('Confirme a alteração de e-mail pelo provedor.')}await refresh();bridge.closeModal();return true}
   if(f.id==='manual-address-form'||f.id==='delivery-address-form'){
    const coordinates=bridge.coordinates(),payload={label:String(form.get('label')||'Endereço'),street:String(form.get('street')),number:String(form.get('number')),complement:String(form.get('complement')||''),reference:String(form.get('reference')||''),neighborhood:String(form.get('neighborhood')||''),city:'Porteirinha',state:'MG',is_primary:true,...(f.id==='delivery-address-form'&&coordinates?{latitude:coordinates.lat,longitude:coordinates.lng}:{})};
    const id=await commands.rpc('nf_save_address',{p_id:bridge.editingAddress()||null,p_data:payload});await refresh();const a=bridge.addresses().find(x=>x.id===id);bridge.applyAddress(a);bridge.closeModal();if(bridge.addressCheckout())bridge.showCheckoutPayment();else{bridge.setView('addresses');render()}toast('Endereço confirmado no servidor.');return true;
@@ -180,12 +179,12 @@ export function controller(bridge,api){
   }
   if(f.id==='product-form'){
    const s=d.stores.find(s=>s.id===u.storeId),old=s.products[Number(f.dataset.index)],lines=String(form.get('extras')||'').split(/\r?\n/).filter(l=>l.trim()),options=lines.map(line=>{const match=line.match(/^(.+):([^:]+)$/);if(!match)throw new Error('Adicionais: use nome:preço.');return {name:match[1].trim(),price_cents:api.cents(match[2])}}),groups=options.length?[{name:String(form.get('groupName')||'Adicionais'),min_choices:Number(form.get('minChoices')||0),max_choices:Number(form.get('maxChoices')||options.length),options}]:[];
-   const payload={name:String(form.get('name')),description:String(form.get('desc')),price_cents:api.cents(form.get('price')),category:String(form.get('category')),available:!!form.get('available'),notes_label:String(form.get('productNotes')||'')};const file=f.elements.image?.files?.[0];if(file)payload.image_url=await commands.upload(u.storeId,file);
+   const payload={ingredients:String(form.get('ingredients')||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean),name:String(form.get('name')),description:String(form.get('desc')),price_cents:api.cents(form.get('price')),category:String(form.get('category')),available:!!form.get('available'),notes_label:String(form.get('productNotes')||'')};const file=f.elements.image?.files?.[0];if(file)payload.image_url=await commands.upload(u.storeId,file);
    await run(()=>commands.rpc('nf_save_product',{p_store:u.storeId,p_id:old?.[9]||null,p_data:payload,p_groups:groups}),'Produto salvo com identidade permanente.');return true;
   }
   if(f.id==='checkout-form'){
    if(checkout.busy)return true;const owner=u.id,revision=api.sessionRevision?.();{
-    const s=bridge.cartStore();if(!s)throw new Error('Carrinho vazio.');dining.validate(s);const a=bridge.addresses().find(a=>a.formatted===u.address),request={store_id:s.id,fulfillment:bridge.fulfillment(),address_id:bridge.fulfillment()==='delivery'?a?.id||null:null,table_token:bridge.fulfillment()==='dine_in'?dining.mode(s)?.token:null,payment_method:Object.keys(paymentNames).find(k=>paymentNames[k]===form.get('payment')),notes:String(form.get('notes')||''),expected_total_cents:Number(f.dataset.reviewedTotal),items:d.cart.map(row=>({product_id:row.pid,quantity:row.qty,option_ids:(row.extras||[]).map(x=>x.id),notes:row.note||''}))};
+    const s=bridge.cartStore();if(!s)throw new Error('Carrinho vazio.');dining.validate(s);const a=bridge.addresses().find(a=>a.formatted===u.address),request={store_id:s.id,fulfillment:bridge.fulfillment(),address_id:bridge.fulfillment()==='delivery'?a?.id||null:null,table_token:bridge.fulfillment()==='dine_in'?dining.mode(s)?.token:null,payment_method:Object.keys(paymentNames).find(k=>paymentNames[k]===form.get('payment')),notes:String(form.get('notes')||''),expected_total_cents:Number(f.dataset.reviewedTotal),items:d.cart.map(row=>({product_id:row.pid,quantity:row.qty,option_ids:(row.extras||[]).map(x=>x.id),notes:row.note||'',...(row.removedIngredients?.length?{removed_ingredients:[...row.removedIngredients].sort()}: {})}))};
     let id;
     try{id=await checkout.place(owner,request,api)}catch(error){if(error.message.includes('valores mudaram'))await refresh();throw error}
     if(data().current?.id!==owner||api.sessionRevision?.()!==revision){toast('Pedido confirmado na conta que iniciou a compra. Entre nela para acompanhar.');return true;}
@@ -208,5 +207,5 @@ export function controller(bridge,api){
   if(!orderWhatsApp(order,store))return '';
   return '<section class="dash-card"><div class="dash-card-body"><h2>Contato pelo WhatsApp</h2><p>O pedido permanece registrado no NortFood. Aguarde o aceite da loja no acompanhamento. Abrir o WhatsApp não confirma envio, leitura ou aceite.</p><div class="detail-actions"><button class="btn outline" data-whatsapp-order="'+esc(order.id)+'">Abrir WhatsApp da loja</button><button class="btn outline" data-copy-whatsapp="'+esc(order.id)+'">Copiar resumo completo</button></div><small>O link inclui produtos e total registrado. Endereço e observações pessoais só entram no resumo completo que você escolher copiar e compartilhar.</small></div></section>';
  }
- return {refresh,click,submit,orderActions,financePage,adminPage,whatsappActions,context:()=>context,draftFor:id=>storeDrafts.find(row=>row.store_id===id)};
+ return {refresh,click,submit,orderActions,financePage,adminPage,whatsappActions,context:()=>context,setupFor:id=>storeSetups.find(row=>row.store_id===id),draftFor:id=>storeDrafts.find(row=>row.store_id===id)};
 }
