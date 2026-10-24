@@ -3,6 +3,15 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),vm=requir
 async function backend(client,options={}){const result=await esbuild.build({entryPoints:[path.resolve(__dirname,'../src/backend.js')],bundle:true,write:false,format:'iife',platform:'browser',plugins:[{name:'auth-transport-fixture',setup(build){build.onResolve({filter:/^@supabase\/supabase-js$/},()=>({path:'client',namespace:'fixture'}));build.onResolve({filter:/^\.\/commercial\.js$/},()=>({path:'controller',namespace:'fixture'}));build.onLoad({filter:/.*/,namespace:'fixture'},a=>({contents:a.path==='client'?'export const createClient=()=>window.__client':'export const controller=()=>({})'}));}}]});const window={addEventListener(){},removeEventListener(){},NORTFOOD_CONFIG:{supabaseUrl:'https://fixture.supabase.co',publishableKey:'sb_publishable_fixture',appUrl:'http://localhost:4173'},__client:client,localStorage:{getItem:()=>null,setItem(){},removeItem(){}},sessionStorage:{getItem:()=>null,setItem(){},removeItem(){}}};vm.runInNewContext(result.outputFiles[0].text,{window,document:{visibilityState:'visible',addEventListener(){},removeEventListener(){}},navigator:{onLine:true},location:{origin:'http://localhost:4173'},AbortController,fetch:options.fetch||fetch,setTimeout:()=>0,clearTimeout,clearInterval(){},setInterval:()=>0,URLSearchParams});return window.NortFoodBackend;}
 function transport(){let changed;const channel={on(){return this},subscribe(){return this}};const client={auth:{getUser:async()=>({data:{user:{id:'first',email:'first@example.test'}}}),onAuthStateChange:fn=>{changed=fn},signOut:async()=>{changed('SIGNED_OUT',null);return {error:null}}},channel:()=>channel,removeChannel:()=>Promise.resolve()};return {client,change:(...args)=>changed(...args)};}
 
+test('Cadastro por e-mail respeita provedor e bloqueio global, mesmo com Google habilitado',async()=>{
+ const {client}=transport();
+ for(const [disabled,email,expected] of [[false,true,true],[true,true,false],[false,false,false]]){
+  const api=await backend(client,{fetch:async()=>({ok:true,json:async()=>({disable_signup:disabled,external:{email,google:true}})})});
+  assert.equal(await api.signupAvailable(),expected);
+ }
+ const offline=await backend(client,{fetch:async()=>{throw Error('offline')}});assert.equal(await offline.signupAvailable(),null);
+});
+
 test('Google verifica provedor real antes do redirecionamento e usa origem raiz',async()=>{
  const {client}=transport();let request;client.auth.signInWithOAuth=async r=>{request=r;return {data:{url:'https://accounts.google.com/'},error:null}};
  const api=await backend(client,{fetch:async()=>({ok:true,json:async()=>({external:{google:true}})})});await api.google();assert.equal(request.provider,'google');assert.equal(request.options.redirectTo,'http://localhost:4173');assert.equal(new URL(request.options.redirectTo).hash,'');

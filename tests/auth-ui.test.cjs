@@ -7,7 +7,7 @@ test('Cadastro principal, confirmacao, login, callback e barra convencional sem 
  const app=await server({config:{mode:'commercial',supabaseUrl:'https://fixture.supabase.co',publishableKey:'sb_publishable_fixture',publicPreview:true,publicAccounts:true}});await new Promise(r=>app.listen(0,'127.0.0.1',r));let browser;
  try{
   browser=await chromium.launch({channel:'chrome',headless:true});const page=await browser.newPage({serviceWorkers:'block',viewport:{width:390,height:844},colorScheme:'dark'}),errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.route('**/assets/nortfood-backend.js',r=>r.fulfill({contentType:'text/javascript',body:code}));await page.route('https://fixture.supabase.co/**',r=>r.fulfill({contentType:'application/json',body:JSON.stringify({disable_signup:false,external:{google:false}})}));
+  await page.route('**/assets/nortfood-backend.js',r=>r.fulfill({contentType:'text/javascript',body:code}));await page.route('https://fixture.supabase.co/**',r=>r.fulfill({contentType:'application/json',body:JSON.stringify({disable_signup:false,external:{google:false,email:true}})}));
   await page.addInitScript(()=>{
    const state={user:null,listener:null,onboarding:{},calls:[]},id='40000000-0000-4000-8000-000000000001';
    const sign=email=>{state.user={id,email};if(email==='valid@example.test')state.onboarding.customer={kind:'customer'};setTimeout(()=>state.listener?.('SIGNED_IN',{user:state.user}),0);return {data:{user:state.user,session:{user:state.user}},error:null}};
