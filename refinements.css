@@ -158,7 +158,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .store-location-card .btn,.store-location-editor button{min-height:44px;white-space:normal;max-width:100%}
 .store-location-editor input{width:100%;min-width:0;min-height:44px;padding:10px 12px;border:1px solid var(--line,#dfe3e8);border-radius:10px;background:var(--card,#fff);color:inherit;font:inherit}
 .store-location-pin span{display:block;width:25px;height:25px;background:#d92535;border:3px solid white;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 5px #0005}
-.store-location-card .leaflet-control-attribution,.store-location-editor .leaflet-control-attribution{font-size:11px;line-height:1.4}
+.store-location-map .leaflet-control-attribution,.nearby-modal .leaflet-control-attribution,.nf-delivery-map-dialog .leaflet-control-attribution{font-size:11px;line-height:1.4;background:#fff;color:#4b5563}
+.store-location-map .leaflet-control-attribution a,.nearby-modal .leaflet-control-attribution a,.nf-delivery-map-dialog .leaflet-control-attribution a{color:inherit}
 .store-location-card .leaflet-container,.store-location-editor .leaflet-container{color:#222}
 @media(max-width:480px){.store-location-map{height:250px}.store-location-card,.store-location-editor{padding:12px}.store-location-editor .detail-actions{display:flex;flex-wrap:wrap;gap:8px}}
 .qr-preview{max-width:380px;margin:16px auto;padding:20px;text-align:center;background:#fff;color:#202020;border:1px solid #e4e4e4;border-top:5px solid #d92535;border-radius:14px}

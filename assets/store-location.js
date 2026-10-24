@@ -16,7 +16,7 @@
  function dispose(root){for(const [el,state] of records)if(!root||!el.isConnected||root===el||root.contains(el))release(el,state);}
  function mapFor(el,state,point,name,onPoint,status){
   if(!scope.L){status('Mapa indisponível. '+(onPoint?'Digite as coordenadas ou tente o GPS.':'Use o endereço ou o Google Maps.'));return;}
-  try{const L=scope.L;state.map=L.map(el,{scrollWheelZoom:false,keyboard:true}).setView(point||center,point?17:14);
+  try{const L=scope.L;state.map=L.map(el,{scrollWheelZoom:false,zoomControl:false,keyboard:true}).setView(point||center,point?17:14);state.map.attributionControl.setPrefix(false);
    let marker=null;const put=p=>{if(!p){if(marker){marker.remove();marker=null}return;}if(marker)marker.setLatLng(p);else{marker=L.marker(p,{icon:L.divIcon({className:'store-location-pin',html:'<span aria-hidden="true"></span>',iconSize:[26,34],iconAnchor:[13,32]}),draggable:Boolean(onPoint),keyboard:true,title:name}).addTo(state.map);marker.bindTooltip(escape(name));if(onPoint)marker.on('dragend',()=>onPoint(coordinates(marker.getLatLng())));}};
    state.put=put;put(point);if(onPoint)state.map.on('click',e=>onPoint(coordinates(e.latlng)));
    const tiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>'});
