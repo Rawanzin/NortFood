@@ -56,7 +56,7 @@ test('Authentication form preserves entered data while both themes update modal,
  const app=await server({config:{mode:'demo'}});await new Promise(r=>app.listen(0,'127.0.0.1',r));let browser;
  try{
   browser=await chromium.launch({channel:'chrome',headless:true});const page=await browser.newPage({viewport:{width:390,height:844}});await page.goto('http://127.0.0.1:'+app.address().port+'/?demo=1');await page.locator('[data-action=auth]').first().click();
-  await page.locator('#auth-email').fill('synthetic-theme@example.test');await page.locator('#auth-password').fill('only-local-fixture');
+  await page.locator('[data-auth-mode=login]').click();await page.locator('#auth-email').fill('synthetic-theme@example.test');await page.locator('#auth-password').fill('only-local-fixture');
   for(const theme of ['dark','light']){
    if(await page.locator('html').getAttribute('data-theme')!==theme)await page.evaluate(()=>document.querySelector('[data-theme-toggle]').click());
    await assertPalette(page,theme);assert.equal(await page.locator('#auth-email').inputValue(),'synthetic-theme@example.test');assert.equal(await page.locator('#auth-password').inputValue(),'only-local-fixture');

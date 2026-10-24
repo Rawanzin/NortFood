@@ -4,9 +4,9 @@ Aplicação existente em HTML/CSS/JavaScript, esbuild e Supabase. Endereço prin
 
 ## Build
 
-Node 24 e pnpm 11.25.0. Executar `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm check:architecture` e `pnpm build`. Manter `pnpm-workspace.yaml`, que autoriza somente o script de instalação do esbuild. Publicar apenas `dist`. O build valida a chave pública, usa staging próprio e identifica o conteúdo da versão. A tela inicial é desenhada antes de concluir o carregamento do SDK; os controles comerciais aguardam a identidade e o catálogo.
+Node 24 e pnpm 11.25.0. Executar `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm check:architecture` e `pnpm build:pages` para a hospedagem principal temporária. Manter `pnpm-workspace.yaml`, que autoriza somente o script de instalação do esbuild. Publicar apenas `dist-pages` no Pages; o build Netlify continua separado em `dist`. O build valida a chave pública, usa staging próprio e identifica o conteúdo da versão. A tela inicial é desenhada antes de concluir o carregamento do SDK; os controles comerciais aguardam a identidade e o catálogo.
 
-Variáveis de build: `NORTFOOD_SUPABASE_URL`, `NORTFOOD_SUPABASE_PUBLISHABLE_KEY`, `NORTFOOD_APP_URL=https://nortfood.netlify.app`, `NORTFOOD_PUBLIC_PREVIEW=no`, `NORTFOOD_PUBLIC_ACCOUNTS=yes`, `NORTFOOD_ENABLE_INDEXING=no`. Não fornecer service_role, PATs, senhas ou segredos de servidor ao frontend.
+Variáveis de build: `NORTFOOD_SUPABASE_URL`, `NORTFOOD_SUPABASE_PUBLISHABLE_KEY`, `NORTFOOD_APP_URL=https://nortfood.pages.dev`, `NORTFOOD_PUBLIC_PREVIEW=no`, `NORTFOOD_PUBLIC_ACCOUNTS=yes`, `NORTFOOD_ENABLE_INDEXING=no`. Não fornecer service_role, PATs, senhas ou segredos de servidor ao frontend.
 
 ## Estado operacional
 
@@ -15,6 +15,8 @@ A interface pública permite acessar cadastro, login e recuperação. A disponib
 A migração 009 acrescenta ingredientes removíveis, snapshot no pedido, restrições de venda e configuração comercial privada. A importação de cardápio é separada, transacional e idempotente. Não reaplicar migrações nem publicar lojas pendentes para preencher a interface. O cadastro completo solicita contato e endereço; vendedores informam também loja e categoria real. A migração 011 grava esses dados somente após autenticação, de forma atômica e idempotente. Dados pendentes ficam temporariamente na aba sem senhas; confirmação em outro navegador pode exigir completá-los novamente. Nenhum cargo administrativo vem do formulário ou dos metadados. O mapa de descoberta abre em modal, com GPS pontual e busca manual; não salva automaticamente endereço ou coordenadas.
 
 ## PWA
+
+O cadastro usa etapas de contato, endereço e acesso, senha nova com mínimo de 8 caracteres sem exigência de composição, confirmação e mensagens em português. A migração 012 acrescenta CEP privado de endereços e referência comercial, preserva permissões existentes e não reaplica as anteriores. Endereço de entrega usa pesquisa explícita, formulário manual e GPS opcional; mapa é uma confirmação secundária. A seleção aproximada não grava dados automaticamente. `node scripts/verify-ux-public.cjs https://nortfood.pages.dev/` verifica a interface pública sem criar contas ou pedidos; `--geocode` limita a uma busca de endereço comercial e uma identificação de ponto escolhido. Testes de GPS controlado não comprovam GPS físico.
 
 Android/Chrome: usar Instalar quando oferecido pelo navegador. iPhone/iPad: Safari → Compartilhar → Adicionar à Tela de Início. O SW protege respostas privadas, oferece uma página offline e pede confirmação para aplicar atualização. Fechar/cancelar o convite de instalação adia nova oferta por 30 dias. Instalação física em aparelhos exige ensaio específico.
 
