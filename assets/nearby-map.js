@@ -19,7 +19,7 @@
   let chosen=null;
   const select=(point,message)=>{if(!valid(point)||state.closed)return;if(state.map){state.map.setView(point,16);if(chosen)chosen.setLatLng(point);else chosen=scope.L.circleMarker(point,{radius:8,color:'#ef233c',fillOpacity:0.6}).addTo(state.map);}status(message||'Ponto selecionado para explorar. Nenhum endereço de entrega foi alterado.');};
   if(scope.L){try{
-   const L=scope.L;state.map=L.map(root.querySelector('[data-nearby-canvas]'),{scrollWheelZoom:false,keyboard:true}).setView(center,14);
+   const L=scope.L;state.map=L.map(root.querySelector('[data-nearby-canvas]'),{scrollWheelZoom:false,zoomControl:false,keyboard:true}).setView(center,14);state.map.attributionControl.setPrefix(false);
    const tiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>'});
    tiles.on('tileerror',()=>status('O mapa não carregou completamente. Você ainda pode usar a busca e a lista de lojas.'));
    tiles.on('load',()=>{if(root.querySelector('[data-nearby-status]')?.textContent==='Carregando mapa…')status('Explore o mapa. O centro inicial é Porteirinha, MG.');});tiles.addTo(state.map);
