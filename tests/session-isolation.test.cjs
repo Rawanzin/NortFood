@@ -10,6 +10,12 @@ function harness(){
   return {d,bridge:{data:()=>d,esc:String,money:String,connection(){},render(){},swapCart(){},categories(){},toast:text=>notices.push(text),closeModal(){},setView(){},saveCart(){},selectOrder(){}},notices};
 }
 const context=(id,admin=false)=>({profile:{id},user:{id,email:id+'@example.test'},memberships:[],is_admin:admin});
+
+test('Falha ao criar rascunho preserva conta autenticada e oferece retomada sem outro signUp',async()=>{
+ const {d,bridge}=harness(),ctx=context('seller');ctx.profile.name='Responsável';ctx.profile.terms_accepted_at='2026-10-23';ctx.user.user_metadata={requested_store_name:'Loja',requested_store_phone:'38999999999'};
+ const api={configured:true,context:async()=>ctx,load:async()=>({catalog:[],snapshot:{},pilotEnabled:false}),rpc:async name=>{assert.equal(name,'nf_complete_seller');throw Error('Conexão interrompida')}};
+ const ctl=await controller(bridge,api);await ctl.refresh('BOOT');assert.equal(d.current.id,'seller');assert.equal(d.current.role,'customer');assert.match(d.current.onboardingError,/Sua conta está conectada/);assert.equal(d.current.pendingStoreName,'Loja');await ctl.refresh('MANUAL');assert.equal(d.current.id,'seller');
+});
 test('A late signed image cannot commit the former administrator identity or private data',async()=>{
   const {d,bridge}=harness(),image=deferred();let revision=0,owner='old';
   const store={id:'store',name:'Store',opens_at:'11:00',closes_at:'22:00',payment_methods:[],products:[],logo_url:'private/logo.png'};

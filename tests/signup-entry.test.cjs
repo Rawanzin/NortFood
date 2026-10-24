@@ -6,7 +6,7 @@ test('Login so encerra formulario e navega depois do perfil; evento SIGNED_IN na
  const scope=vm.createContext({exports:{},module:{exports:{}},window:{},document:{querySelector:()=>({})},location:{hash:''},scrollY:0,scrollTo(){},setTimeout});vm.runInContext(code,scope);
  let release;const gate=new Promise(r=>release=r),d={current:null,preferences:{},orders:[],favoriteAccounts:{}},events=[];let ctl;
  const bridge={data:()=>d,esc:String,money:String,toast(){},modal(){},render:()=>events.push('render'),authMode:()=> 'login',authRole:()=> 'customer',swapCart(){},connection(){},closeModal:()=>{assert.equal(d.current?.id,'account');events.push('close');},setView:view=>events.push(view)};
- const api={configured:true,login:async()=>{ctl.refresh('SIGNED_IN');},context:async()=>{await gate;return {profile:{id:'account'},user:{id:'account',email:'synthetic@example.test'},memberships:[],is_admin:false};},load:async()=>({catalog:[],snapshot:{}})};ctl=scope.module.exports.controller(bridge,api);
+ const api={configured:true,login:async()=>{ctl.refresh('SIGNED_IN');},context:async()=>{await gate;return {profile:{id:'account',terms_accepted_at:'2026-10-23'},user:{id:'account',email:'synthetic@example.test'},memberships:[],is_admin:false};},load:async()=>({catalog:[],snapshot:{}})};ctl=scope.module.exports.controller(bridge,api);
  const form=new FormData();form.set('identifier','synthetic@example.test');form.set('password','fixture-password');const pending=ctl.submit({id:'auth-form'},form);await new Promise(r=>setImmediate(r));assert.deepEqual(events,[]);release();await pending;assert.deepEqual(events,['close','home','render']);
 });
 test('Configuracao servida e JSON de dados; nao executa JavaScript nem aceita porta de outro projeto',async()=>{

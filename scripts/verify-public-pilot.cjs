@@ -25,8 +25,8 @@ async function main(){
    if(width===390||width===1365)await page.screenshot({path:path.join(folder,'home-'+theme+'-'+width+'.png')});
   }
   for(const label of labels){await page.getByRole('button',{name:label,exact:true}).click();assert.equal(await page.locator('.category.active').innerText(),label);}
-  await page.locator('[data-action=auth]').first().click();await page.locator('#auth-form').waitFor();assert.equal(await page.locator('#auth-confirm-password,#auth-phone,#auth-name,#auth-store-name').count(),0);assert.equal(await page.locator('#auth-password').getAttribute('minlength'),'8');
-  assert.equal(await page.locator('[data-role=customer]').innerText(),'Pedir');await page.locator('[data-role=seller]').click();assert.equal(await page.locator('[data-role=seller]').innerText(),'Vender');assert.equal(await page.locator('#auth-store-name').count(),0);
+  await page.locator('[data-action=auth]').first().click();await page.locator('#auth-form').waitFor();assert.equal(await page.locator('#auth-confirm-password,#auth-name').count(),2);assert.equal(await page.locator('#auth-password').getAttribute('minlength'),'8');
+  assert.equal(await page.locator('[data-role=customer]').innerText(),'Pedir');await page.locator('[data-role=seller]').click();assert.equal(await page.locator('[data-role=seller]').innerText(),'Vender');assert.equal(await page.locator('#auth-store-name,#auth-phone').count(),2);
   await page.setViewportSize({width:320,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   if(settings.disable_signup)await page.waitForFunction(()=>document.querySelector('#auth-form [role=status]')?.textContent.includes('Novos cadastros aguardam'));
   await page.screenshot({path:path.join(folder,'seller-signup-320.png'),animations:'disabled'});

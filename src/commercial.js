@@ -35,12 +35,12 @@ export function controller(bridge,api){
  async function performRefresh(event){
   const revision=api.sessionRevision?.(),current=()=>api.sessionRevision?.()===revision;
   try{
-   let nextContext=await api.context();
+   let nextContext=await api.context(),onboardingError=null;const onboardingNeeded=nextContext?.memberships?.length===0;
    // A confirmação do e-mail pode acontecer em outro dispositivo. O vínculo é criado
    // pelo servidor, de forma idempotente, sem depender da sessão da tela de cadastro.
    if(current()&&nextContext?.profile&&nextContext.user?.email_confirmed_at&&nextContext.memberships?.length===0&&invitationCheckedFor!==nextContext.user.id){const claimed=await api.rpc('nf_claim_store_invitation');if(!current())return;invitationCheckedFor=nextContext.user.id;if(claimed)nextContext=await api.context();}
-   if(current()&&nextContext?.profile&&nextContext.memberships?.length===0&&nextContext.user?.user_metadata?.requested_store_name){
-    await api.rpc('nf_create_store_draft',{p_name:nextContext.user.user_metadata.requested_store_name});
+   if(current()&&nextContext?.profile&&onboardingNeeded&&nextContext.user?.user_metadata?.requested_store_name){
+    try{const meta=nextContext.user.user_metadata;await api.rpc(meta.requested_store_phone?'nf_complete_seller':'nf_create_store_draft',meta.requested_store_phone?{p_name:nextContext.profile.name,p_store_name:meta.requested_store_name,p_phone:meta.requested_store_phone,p_consent:!!nextContext.profile.terms_accepted_at}:{p_name:meta.requested_store_name});}catch(error){onboardingError='Sua conta está conectada. Não foi possível concluir a loja: '+error.message;}
     if(!current())return;nextContext=await api.context();
    }
    const loaded=await api.load();
@@ -59,7 +59,7 @@ export function controller(bridge,api){
    const d=data(),u=projected.current;
    if((previous?.id||'guest')!==owner){bridge.swapCart(owner);historyRows=[];historyCursor=null;historyDone=false;reports={};}
    const newOrder=u?.role==='seller'&&u.notifications_enabled!==false&&previous?.id===u.id&&event!=='BOOT'&&projected.latest.some(o=>o.store===u.storeId&&o.backendStatus==='pending'&&!d.orders.some(old=>old.id===o.id));
-   context=nextContext;admin=nextAdmin;d.stores=stores;d.current=u;storeDrafts=Array.isArray(loaded.storeDrafts)?loaded.storeDrafts:[];storeSetups=Array.isArray(loaded.storeSetups)?loaded.storeSetups:[];
+   if(u){u.onboardingError=onboardingError;try{const pending=JSON.parse(storage?.getItem('nortfood-google-store')||'null');if(pending&&Date.now()-pending.at<1800000&&!u.storeId){u.pendingStoreName=u.pendingStoreName||String(pending.name||'').slice(0,80);u.pendingStorePhone=u.pendingStorePhone||String(pending.phone||'').slice(0,22);}}catch{}}context=nextContext;admin=nextAdmin;d.stores=stores;d.current=u;storeDrafts=Array.isArray(loaded.storeDrafts)?loaded.storeDrafts:[];storeSetups=Array.isArray(loaded.storeSetups)?loaded.storeSetups:[];
    d.orders=projected.orders;if(detail)d.orders.push(orderView(detail,u));
    d.notifications=projected.notifications;d.conversations=projected.conversations;d.reviews=projected.reviews;
    d.commissionLedger=projected.commissionLedger;d.commissionSettlements=projected.commissionSettlements;
@@ -77,7 +77,7 @@ export function controller(bridge,api){
   }catch(error){if(!current()){refresh('POLL').catch(()=>{});return;}bridge.connection('error',error.message);if(!['POLL','DATABASE_CHANGE'].includes(event))throw error}
  }
 
- function authDestination(u){let intent;try{intent=storage?.getItem('nortfood-auth-intent');storage?.removeItem('nortfood-auth-intent')}catch{}return u.role==='admin'?'admin':u.role==='seller'?'seller':intent==='seller'?'profile':'home';}
+ function authDestination(u){let intent;try{intent=storage?.getItem('nortfood-auth-intent');storage?.removeItem('nortfood-auth-intent')}catch{}return u.role==='admin'?'admin':u.role==='seller'?'seller':intent==='seller'||u.pendingStoreName||!u.terms_accepted_at?'profile':'home';}
  async function run(operation,message){const commands=sessionCommands(api);await operation();commands.assertCurrent();bridge.closeModal();await refresh();commands.assertCurrent();if(message)toast(message)}
  function requireLogin(){if(!api.configured)throw new Error('Supabase não configurado. Pedidos comerciais estão bloqueados.');if(!data().current)throw new Error('Entre na sua conta para continuar.');}
  async function click(t){
@@ -112,7 +112,7 @@ export function controller(bridge,api){
   if(t.dataset.loadHistory!==undefined){requireLogin();if(historyBusy)return true;if(historyDone){toast('Nenhum pedido anterior.');return true}historyBusy=true;try{const owner=u.id,known=new Set(d.orders.map(o=>o.id));let added=0,pages=0;do{const rows=await commands.rpc('nf_order_history',{p_before:historyCursor?.created_at||null,p_before_id:historyCursor?.id||null,p_limit:50});if(data().current?.id!==owner)return true;const last=rows.at(-1);if(last)historyCursor={created_at:last.created_at,id:last.id};historyDone=rows.length<50;for(const row of rows)if(!known.has(row.id)){known.add(row.id);historyRows.push(orderView(row,u));added++}pages++;}while(!added&&!historyDone&&pages<10);await refresh();toast(added?'Pedidos anteriores carregados.':historyDone?'Nenhum pedido anterior.':'Histórico consultado. Continue para ver anteriores.');}finally{historyBusy=false}return true}
   if(t.dataset.reportPeriod){const today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),date=new Date(today+'T12:00:00Z');if(t.dataset.reportPeriod==='week')date.setUTCDate(date.getUTCDate()-((date.getUTCDay()+6)%7));if(t.dataset.reportPeriod==='month')date.setUTCDate(1);reports[u.storeId]=await commands.rpc('nf_report',{p_store:u.storeId,p_from:date.toISOString().slice(0,10),p_to:today});render();return true}
   if(t.dataset.action==='logout'){await api.logout();invalidateIdentity();bridge.setView('home');await refresh();return true}
-  if(t.dataset.action==='google-auth'){if(bridge.authMode()==='register'&&!document.querySelector('#auth-form [name=consent]')?.checked)throw new Error('Aceite os termos antes de continuar com Google.');t.disabled=true;try{await api.google(bridge.authRole());}catch(error){const alert=document.getElementById('auth-error');if(alert)alert.textContent=error.message;throw error;}finally{t.disabled=false;}return true}
+  if(t.dataset.action==='google-auth'){if(bridge.authMode()==='register'&&!document.querySelector('#auth-form [name=consent]')?.checked)throw new Error('Aceite os termos antes de continuar com Google.');t.disabled=true;try{try{const f=document.getElementById('auth-form');if(bridge.authRole()==='seller')storage?.setItem('nortfood-google-store',JSON.stringify({name:f?.elements.storeName?.value||'',phone:f?.elements.phone?.value||'',at:Date.now()}));else storage?.removeItem('nortfood-google-store');}catch{}await api.google(bridge.authRole());}catch(error){const alert=document.getElementById('auth-error');if(alert)alert.textContent=error.message;throw error;}finally{t.disabled=false;}return true}
   if(t.dataset.confirmProductPrice){if(!confirm('Confirmo que o preço salvo deste produto está correto para a jarra de 750 ml. A disponibilidade ainda precisa ser ativada no cardápio.'))return true;await run(()=>commands.rpc('nf_confirm_product_price',{p_product:t.dataset.confirmProductPrice}),'Preço confirmado. Você pode revisar a disponibilidade.');return true;}
   if(t.dataset.action==='recover-password'){modal('<div class="modal-head"><h2>Recuperar acesso</h2><button class="close" data-action="close-modal">×</button></div><form id="recover-form" class="form"><label>E-mail<input name="email" type="email" required autocomplete="email"></label><button class="btn">Solicitar recuperação</button></form>');return true}
   if(t.dataset.fav||t.dataset.productFav){requireLogin();const kind=t.dataset.productFav?'products':'stores',id=t.dataset.productFav||t.dataset.fav,list=bridge.favorites(kind);await run(()=>commands.favorite(id,kind,list.includes(id)),'Favoritos atualizados no servidor.');return true}
@@ -142,7 +142,7 @@ export function controller(bridge,api){
    if(bridge.authMode()==='register'){
     if(!form.get('consent'))throw new Error('Aceite os termos para cadastrar.');
     try{storage?.setItem('nortfood-auth-intent',bridge.authRole()==='seller'?'seller':'customer')}catch{}
-    const signedIn=await api.register(email,password,'Cliente');
+    const name=String(form.get('name')||'').trim(),selling=bridge.authRole()==='seller',storeName=String(form.get('storeName')||'').trim(),phone=String(form.get('phone')||'').trim();if(!name||name.length>80)throw new Error('Informe seu nome (até 80 caracteres).');if(password!==String(form.get('confirmPassword')||''))throw new Error('As senhas não conferem.');if(selling&&(!storeName||!/^(?:55)?[1-9][0-9]{9,10}$/.test(phone.replace(/\D/g,''))))throw new Error('Informe o nome e um telefone comercial válido com DDD.');const signedIn=await api.register(email,password,name,selling?phone:'',selling?storeName:'');
     if(!signedIn){bridge.authConfirmation(email);return true;}
     toast('Conta cadastrada. Você já está conectado.');
    }
@@ -152,6 +152,7 @@ export function controller(bridge,api){
    bridge.closeModal();bridge.setView(authDestination(d.current));render();return true;
    }finally{authBusy=false}
   }
+  if(f.id==='resend-confirmation-form'){await api.resend(String(form.get('email')||''));toast('Se a conta aguarda confirmação, o provedor enviará um novo link.');return true;}
   if(f.id==='recover-form'){await api.recover(String(form.get('email')));bridge.closeModal();toast('Se o e-mail estiver cadastrado, o provedor enviará instruções.');return true}
   requireLogin();const commands=sessionCommands(api);
   if(f.id==='store-setup-form'){await run(()=>commands.rpc('nf_save_setup',{p_store:u.storeId,p_delivery:api.cents(form.get('deliveryReference')||0),p_replacement:api.cents(form.get('replacementReference')||0),p_owner_confirmed:!!form.get('ownerConfirmed')}),'Referências comerciais salvas. Frete cobrado depende dos bairros configurados.');return true;}
@@ -165,7 +166,8 @@ export function controller(bridge,api){
    const coordinates=bridge.coordinates(),payload={label:String(form.get('label')||'Endereço'),street:String(form.get('street')),number:String(form.get('number')),complement:String(form.get('complement')||''),reference:String(form.get('reference')||''),neighborhood:String(form.get('neighborhood')||''),city:'Porteirinha',state:'MG',is_primary:true,...(f.id==='delivery-address-form'&&coordinates?{latitude:coordinates.lat,longitude:coordinates.lng}:{})};
    const id=await commands.rpc('nf_save_address',{p_id:bridge.editingAddress()||null,p_data:payload});await refresh();const a=bridge.addresses().find(x=>x.id===id);bridge.applyAddress(a);bridge.closeModal();if(bridge.addressCheckout())bridge.showCheckoutPayment();else{bridge.setView('addresses');render()}toast('Endereço confirmado no servidor.');return true;
   }
-  if(f.id==='store-request-form'){await run(()=>commands.rpc('nf_create_store_draft',{p_name:String(form.get('name'))}),'Rascunho da loja criado. Prepare o perfil e o cardápio antes de solicitar aprovação.');bridge.setView('seller');render();return true}
+  if(f.id==='complete-profile-form'){await run(()=>commands.rpc('nf_complete_profile',{p_name:String(form.get('name')),p_consent:!!form.get('consent')}),'Dados da conta salvos.');bridge.setView('home');render();return true;}
+  if(f.id==='store-request-form'){await run(()=>commands.rpc('nf_complete_seller',{p_name:String(form.get('responsibleName')),p_store_name:String(form.get('name')),p_phone:String(form.get('phone')),p_consent:!!form.get('consent')}),'Rascunho da loja criado. Prepare o perfil e o cardápio antes de solicitar aprovação.');try{storage?.removeItem('nortfood-google-store')}catch{}bridge.setView('seller');render();return true}
   if(f.id==='store-form'){
    const store=u.storeId,catalog=await commands.categories(),ids=[...new Set(form.getAll('categories').map(name=>(catalog.find(c=>c.name===name)||catalog.find(c=>categoryKey(c.name)===categoryKey(name)))?.id).filter(Boolean))],[opens,closes]=String(form.get('hours')).split('-');
    const zones=String(form.get('zones')||'').split(/\r?\n/).filter(x=>x.trim()).map(line=>{const [neighborhood,price]=line.split(':');return {neighborhood:neighborhood.trim(),fee_cents:api.cents(price),city:'Porteirinha'}});
@@ -207,5 +209,5 @@ export function controller(bridge,api){
   if(!orderWhatsApp(order,store))return '';
   return '<section class="dash-card"><div class="dash-card-body"><h2>Contato pelo WhatsApp</h2><p>O pedido permanece registrado no NortFood. Aguarde o aceite da loja no acompanhamento. Abrir o WhatsApp não confirma envio, leitura ou aceite.</p><div class="detail-actions"><button class="btn outline" data-whatsapp-order="'+esc(order.id)+'">Abrir WhatsApp da loja</button><button class="btn outline" data-copy-whatsapp="'+esc(order.id)+'">Copiar resumo completo</button></div><small>O link inclui produtos e total registrado. Endereço e observações pessoais só entram no resumo completo que você escolher copiar e compartilhar.</small></div></section>';
  }
- return {refresh,click,submit,orderActions,financePage,adminPage,whatsappActions,context:()=>context,setupFor:id=>storeSetups.find(row=>row.store_id===id),draftFor:id=>storeDrafts.find(row=>row.store_id===id)};
+ return {initialDestination:()=>api.authReturned?.()&&data().current?authDestination(data().current):null,refresh,click,submit,orderActions,financePage,adminPage,whatsappActions,context:()=>context,setupFor:id=>storeSetups.find(row=>row.store_id===id),draftFor:id=>storeDrafts.find(row=>row.store_id===id)};
 }

@@ -52,3 +52,6 @@ body{padding-bottom:calc(88px + env(safe-area-inset-bottom))}.dock-icon{font:24p
 @keyframes nf-auth-enter{from{opacity:0;transform:translateY(9px) rotateX(-1deg) scale(.99)}to{opacity:1;transform:translateY(0) rotateX(0) scale(1)}}
 @media(max-width:480px){.modal-scrim:has(.auth-modal){padding:8px}.modal.auth-modal{width:100%;max-height:calc(100dvh - 16px);padding:22px 19px;border-radius:20px}.auth-brand{margin-bottom:15px}.auth-brand img{height:34px;max-width:142px}.auth-intro{margin-bottom:17px}.auth-intro h2{font-size:24px}.auth-remember small{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.modal.auth-modal,.modal.auth-modal *{animation-duration:.01ms!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+
+/* Erros próximos ao campo e estado de envio sem mudar a identidade visual. */
+.field-error{display:block;color:#b42318;font-size:.82rem;min-height:0}.field-error:empty{display:none}.auth-form [aria-invalid=true]{border-color:#b42318}.auth-form[aria-busy=true] .auth-submit{cursor:wait}.auth-form .field{min-width:0}.auth-form input{max-width:100%;box-sizing:border-box}

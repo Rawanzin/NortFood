@@ -25,6 +25,16 @@ test('Resposta de contexto antiga nao e combinada com nova identidade',async()=>
 test('Cadastro com confirmacao conserva nome solicitado, sem conceder cargo',async()=>{
  const {client}=transport();let signup;client.auth.signUp=async request=>{signup=request;return {data:{user:{id:'pending'},session:null},error:null}};const api=await backend(client);const signed=await api.register('owner@example.test','a-long-fixture-password','Nome','38999999999','  Loja apos confirmar  ');assert.equal(signed,false);assert.equal(signup.options.data.requested_store_name,'Loja apos confirmar');assert.equal(signup.options.data.role,undefined);assert.equal(signup.options.emailRedirectTo,'http://localhost:4173');assert.equal(await api.context(),null);
 });
+
+test('Cadastro de vendedor preserva dados de retomada e separa telefone comercial do pessoal',async()=>{
+ const {client}=transport();let request;client.auth.signUp=async r=>{request=r;return {data:{user:{id:'pending'},session:null},error:null}};const api=await backend(client);await api.register('seller@example.test','12345678','Responsável','(38) 99999-9999','Loja real');assert.equal(request.options.data.name,'Responsável');assert.equal(request.options.data.phone,'');assert.equal(request.options.data.requested_store_phone,'(38) 99999-9999');assert.equal(request.options.data.requested_store_name,'Loja real');assert.equal(request.options.data.role,undefined);
+ client.auth.signUp=async()=>({data:{},error:{code:'email_address_not_authorized'}});await assert.rejects(()=>api.register('test@example.test','senha de teste','Teste'),/provedor de e-mail/);
+ client.auth.signUp=async()=>({data:{user:{identities:[]},session:null},error:null});await assert.rejects(()=>api.register('test@example.test','senha de teste','Teste'),/já possui conta/);
+});
+
+test('Inicialização aguarda o SDK recuperar sessão antes de verificar identidade no servidor',async()=>{
+ const {client}=transport();const calls=[];client.auth.getSession=async()=>{calls.push('session');return {data:{session:{user:{id:'restored'}}},error:null}};client.auth.getUser=async()=>{calls.push('verified-user');return {data:{user:{id:'restored'}}}};const api=await backend(client);await api.initialize(async()=>{});assert.deepEqual(calls,['session','verified-user']);client.rpc=async()=>({data:{profile:{id:'restored'}},error:null});assert.equal((await api.context()).user.id,'restored');
+});
 test('Logout invalida revisao e contexto da identidade anterior',async()=>{
  const {client}=transport();const api=await backend(client);await api.initialize(async()=>{});const revision=api.sessionRevision();await api.logout();assert.ok(api.sessionRevision()>revision);assert.equal(await api.context(),null);
 });
