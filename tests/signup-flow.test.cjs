@@ -111,3 +111,68 @@ test('Rascunho de onboarding preserva CEP sem senhas e respeita o vínculo já c
   assert.equal(draft.get('fixture@example.test', 'fixture-id').address.postal_code, '39520-000');
   assert.equal(JSON.stringify(Array.from(entries.values())).includes('NUNCA_SALVAR'), false);
 });
+
+test('UI usa a mesma chave com papel/e-mail estritos, sem senha ou aceite, e preserva recibos antigos', async () => {
+  const { createOnboardingDraft } = await import('../src/platform/onboarding-draft.js');
+  let now = 1000;
+  const key = 'nortfood-onboarding-v1', entries = new Map([[key, JSON.stringify({ email: 'old@example.test', userId: 'original-id', expires: now + 86400000, data: { kind: 'customer', name: 'Antigo', consent: true, address: { street: 'Rua original' } } })]]);
+  const storage = { getItem: name => entries.get(name), setItem: (name, value) => entries.set(name, value), removeItem: name => entries.delete(name) };
+  const draft = createOnboardingDraft(storage, () => now);
+  const customer = draft.saveForm('customer', 'A@example.test', { name: 'CLIENTE A', identifier: 'A@example.test', street: 'Entrega A', password: 'SENHA_NUNCA_GRAVAR', confirmPassword: 'SENHA_NUNCA_GRAVAR', consent: true }, 2);
+  draft.saveForm('seller', 'a@example.test', { name: 'VENDEDOR A', identifier: 'a@example.test', street: 'Loja A', storeName: 'Loja A' }, 1);
+  assert.deepEqual(Array.from(entries.keys()), [key]);
+  const stored = JSON.parse(entries.get(key));
+  assert.equal(stored.version, 2); assert.equal(stored.forms.length, 2);
+  assert.equal(stored.forms.some(row => row.data.password || row.data.confirmPassword || 'consent' in row.data), false);
+  assert.equal(entries.get(key).includes('SENHA_NUNCA_GRAVAR'), false);
+  assert.equal(draft.get('old@example.test', 'original-id').bound, true);
+  const beforeWrongUid = entries.get(key);
+  assert.equal(draft.get('old@example.test', 'another-id'), null);
+  assert.equal(draft.get('old@example.test'), null);
+  assert.equal(entries.get(key), beforeWrongUid);
+  assert.equal(draft.get('old@example.test', 'original-id').address.street, 'Rua original');
+  assert.equal(draft.getForm('customer', 'a@example.test').data.street, 'Entrega A');
+  assert.equal(draft.getForm('seller', 'a@example.test').data.street, 'Loja A');
+  assert.equal(draft.getForm('customer', 'b@example.test'), null); assert.equal(draft.getForm('admin', 'a@example.test'), null);
+  assert.equal(draft.resumeForm(customer.id, 'seller'), null);
+  assert.equal(JSON.stringify(draft.listForms('customer')).includes('CLIENTE A'), false);
+  assert.equal(JSON.stringify(draft.listForms('customer')).includes('Entrega A'), false);
+  assert.equal(JSON.stringify(draft.listForms('customer')).includes('a@example.test'), false);
+  const recovered = draft.resumeForm(customer.id, 'customer'); recovered.data.street = 'Mutação fora do helper';
+  assert.equal(draft.getForm('customer', 'a@example.test').data.street, 'Entrega A');
+  const anonymous = draft.saveForm('customer', '', { identifier: 'a@example.test' });
+  assert.equal(draft.saveForm('customer', 'a@example.test', { identifier: 'a@example.test' }, 0, anonymous.id).conflict, true);
+  assert.equal(draft.saveForm('customer', 'a@example.test', { name: 'Não substituir sem Retomar' }).conflict, true);
+  assert.equal(draft.getForm('customer', 'a@example.test').data.name, 'CLIENTE A');
+  assert.equal(draft.getForm('customer', 'a@example.test').data.street, 'Entrega A');
+  draft.clearForms({ email: 'a@example.test' });
+  assert.equal(draft.listForms('customer').length, 0); assert.equal(draft.get('old@example.test', 'original-id').bound, true);
+  draft.save('second@example.test', { kind: 'seller', name: 'Segundo', consent: true }); draft.bind('second@example.test', 'second-id');
+  draft.clearPending('old@example.test', 'wrong-id'); assert.equal(draft.get('old@example.test', 'original-id').bound, true);
+  draft.clearPending('old@example.test', 'original-id'); assert.equal(draft.get('old@example.test', 'original-id'), null); assert.equal(draft.get('second@example.test', 'second-id').bound, true);
+  now += 86400001; assert.equal(draft.get('second@example.test', 'second-id'), null);
+});
+
+test('Limites de UI e recibos não descartam contas vinculadas; armazenamento bloqueado mantém só memória', async () => {
+  const { createOnboardingDraft } = await import('../src/platform/onboarding-draft.js');
+  let now = 1000;
+  const entries = new Map(), storage = { getItem: key => entries.get(key), setItem: (key, value) => entries.set(key, value), removeItem: key => entries.delete(key) }, draft = createOnboardingDraft(storage, () => now);
+  for (let i = 0; i < 8; i++) { assert.equal(draft.save('pending' + i + '@example.test', { name: 'Conta ' + i, kind: 'customer' }), true); draft.bind('pending' + i + '@example.test', 'identity-' + i); }
+  assert.equal(draft.save('too-many@example.test', { name: 'Não apagar anteriores' }), false);
+  for (let i = 0; i < 12; i++) { now++; draft.saveForm('customer', 'form' + i + '@example.test', { name: 'Á'.repeat(10000), identifier: 'form' + i + '@example.test', street: 'Á'.repeat(10000), reference: 'Á'.repeat(10000), unknown: 'NÃO GUARDAR' }, 9); }
+  assert.equal(draft.listForms('customer').length, 6);
+  assert.equal(draft.getForm('customer', 'form0@example.test'), null);
+  assert.equal(draft.getForm('customer', 'form11@example.test').data.name.length, 80);
+  assert.equal(draft.getForm('customer', 'form11@example.test').step, 2);
+  assert.ok(Buffer.byteLength(entries.get('nortfood-onboarding-v1'), 'utf8') <= 65536);
+  for (let i = 0; i < 8; i++) assert.equal(draft.get('pending' + i + '@example.test', 'identity-' + i).bound, true);
+  draft.clearForms(); for (let i = 0; i < 8; i++) assert.equal(draft.get('pending' + i + '@example.test', 'identity-' + i).bound, true);
+  draft.clear(); assert.equal(entries.size, 0);
+  const blocked = { getItem() { throw Error('blocked'); }, setItem() { throw Error('blocked'); }, removeItem() { throw Error('blocked'); } }, memory = createOnboardingDraft(blocked, () => now);
+  const anonymous = memory.saveForm('seller', '', { name: 'Sem e-mail ainda', password: 'NUNCA_GUARDAR' }, 0);
+  assert.equal(memory.getForm('seller', ''), null);
+  assert.equal(memory.resumeForm(anonymous.id, 'seller').data.name, 'Sem e-mail ainda');
+  const bound = memory.saveForm('seller', 'seller@example.test', { name: 'Mesmo rascunho' }, 1, anonymous.id);
+  assert.equal(bound.id, anonymous.id); assert.equal(memory.listForms('seller').length, 1);
+  assert.equal(createOnboardingDraft(blocked, () => now).listForms('seller').length, 0);
+});
