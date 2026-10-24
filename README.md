@@ -1,6 +1,6 @@
 # NortFood
 
-Aplicação existente em HTML/CSS/JavaScript, esbuild e Supabase. Site público: https://nortfood.netlify.app.
+Aplicação existente em HTML/CSS/JavaScript, esbuild e Supabase. Endereço principal temporário: https://nortfood.pages.dev. O endereço Netlify é preservado, mas suas publicações estão suspensas enquanto a cota estiver bloqueada.
 
 ## Build
 
@@ -20,7 +20,7 @@ Android/Chrome: usar Instalar quando oferecido pelo navegador. iPhone/iPad: Safa
 
 ## Publicação e reversão
 
-Somente `release/nortfood` é branch de produção Netlify. Branches experimentais não devem ser configuradas como produção. O comando em `netlify.toml` executa validação sintática, 30 testes de serviços/sessões/cache, verificação arquitetural, build e auditoria do pacote. Diretório: `dist`. A configuração do ambiente fica na hospedagem; o repositório não contém credenciais. A integração usa chave SSH de leitura restrita a este repositório e webhook oficial do Netlify para eventos push; não distribui token administrativo do Netlify ao GitHub.
+Somente `release/nortfood` é branch de produção Netlify. Branches experimentais não devem ser configuradas como produção. O comando em `netlify.toml` executa validação sintática, testes de serviços/sessões/cache, verificação arquitetural, build e auditoria do pacote. Diretório: `dist`. A configuração do ambiente fica na hospedagem; o repositório não contém credenciais. A integração usa chave SSH de leitura restrita a este repositório e webhook oficial do Netlify para eventos push; não distribui token administrativo do Netlify ao GitHub.
 
 Validar uma prévia com `node scripts/verify-public-pilot.cjs https://<deploy>--nortfood.netlify.app` antes da promoção. Após publicar: `pnpm test:public` e `node scripts/verify-public-pilot.cjs`. Esses verificadores não criam contas ou pedidos; registram separadamente a indisponibilidade real do Auth e o bloqueio de pedidos. A aceitação autenticada exige contas de teste e evidência própria.
 
