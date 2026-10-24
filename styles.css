@@ -55,3 +55,5 @@ body{padding-bottom:calc(88px + env(safe-area-inset-bottom))}.dock-icon{font:24p
 
 /* Erros próximos ao campo e estado de envio sem mudar a identidade visual. */
 .field-error{display:block;color:#b42318;font-size:.82rem;min-height:0}.field-error:empty{display:none}.auth-form [aria-invalid=true]{border-color:#b42318}.auth-form[aria-busy=true] .auth-submit{cursor:wait}.auth-form .field{min-width:0}.auth-form input{max-width:100%;box-sizing:border-box}
+
+.onboarding-address{min-width:0;border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:12px}.onboarding-address legend{padding:0 6px;font-weight:700;font-size:.9rem}.auth-form [aria-disabled=true]{opacity:.8}.auth-form select{width:100%;min-width:0}

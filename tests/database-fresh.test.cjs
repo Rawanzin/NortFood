@@ -1,6 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs/promises');
 const {PGlite}=require('@electric-sql/pglite');
-test('Clean local PostgreSQL applies actual migrations 001–010, constraints, RLS and least-privilege grants',async()=>{
+test('Clean local PostgreSQL applies actual migrations 001–011, constraints, RLS and least-privilege grants',async()=>{
   const db=new PGlite();
   try{
     await db.waitReady;
@@ -10,7 +10,7 @@ test('Clean local PostgreSQL applies actual migrations 001–010, constraints, R
       grant usage on schema auth to anon,authenticated;grant execute on function auth.uid() to anon,authenticated;
       create schema storage;create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
       create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text,name text);alter table storage.objects enable row level security;`);
-    const files=(await fs.readdir('supabase/migrations')).filter(file=>file.endsWith('.sql')).sort();assert.equal(files.length,10);
+    const files=(await fs.readdir('supabase/migrations')).filter(file=>file.endsWith('.sql')).sort();assert.equal(files.length,11);
     for(const file of files)await db.exec(await fs.readFile('supabase/migrations/'+file,'utf8'));
     const unprotected=await db.query("select c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname in('public','private') and c.relkind='r' and not c.relrowsecurity");assert.equal(unprotected.rows.length,0);
     const invalid=await db.query("select conname from pg_constraint where not convalidated");assert.equal(invalid.rows.length,0);

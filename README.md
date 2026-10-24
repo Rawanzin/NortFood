@@ -12,7 +12,7 @@ Variáveis de build: `NORTFOOD_SUPABASE_URL`, `NORTFOOD_SUPABASE_PUBLISHABLE_KEY
 
 A interface pública permite acessar cadastro, login e recuperação. A disponibilidade real depende do Supabase Auth e do SMTP autorizado; abrir o formulário não comprova criação de conta. Categorias editoriais permanentes aparecem mesmo com catálogo de lojas vazio. A migração 008 adiciona rascunhos privados, envio para análise e limite administrativo de uma loja aprovada. Não habilita pedidos ou concede administradores. Para liberar operação, validar loja nominal autorizada, e-mail real, sessões independentes, RLS e checkout, recebimento do vendedor, confirmação e contingência. Alterar uma flag de interface não aprova o lançamento comercial.
 
-A migração 009 acrescenta ingredientes removíveis, snapshot no pedido, restrições de venda e configuração comercial privada. A importação de cardápio é separada, transacional e idempotente. Não reaplicar migrações nem publicar lojas pendentes para preencher a interface. Cadastro inicial usa e-mail, senha de no mínimo 8 caracteres e consentimento. Dados de contato são completados antes do primeiro pedido. O mapa de descoberta abre em modal, com GPS pontual e busca manual; não salva automaticamente endereço ou coordenadas.
+A migração 009 acrescenta ingredientes removíveis, snapshot no pedido, restrições de venda e configuração comercial privada. A importação de cardápio é separada, transacional e idempotente. Não reaplicar migrações nem publicar lojas pendentes para preencher a interface. O cadastro completo solicita contato e endereço; vendedores informam também loja e categoria real. A migração 011 grava esses dados somente após autenticação, de forma atômica e idempotente. Dados pendentes ficam temporariamente na aba sem senhas; confirmação em outro navegador pode exigir completá-los novamente. Nenhum cargo administrativo vem do formulário ou dos metadados. O mapa de descoberta abre em modal, com GPS pontual e busca manual; não salva automaticamente endereço ou coordenadas.
 
 ## PWA
 
@@ -25,6 +25,10 @@ Somente `release/nortfood` é branch de produção Netlify. Branches experimenta
 Validar uma prévia com `node scripts/verify-public-pilot.cjs https://<deploy>--nortfood.netlify.app` antes da promoção. Após publicar: `pnpm test:public` e `node scripts/verify-public-pilot.cjs`. Esses verificadores não criam contas ou pedidos; registram separadamente a indisponibilidade real do Auth e o bloqueio de pedidos. A aceitação autenticada exige contas de teste e evidência própria.
 
 Para recuperação, reverter o commit correspondente em novo commit de `release/nortfood` e deixar o deploy Git publicar a correção. Conferir HTTPS, `release.json`, configuração pública e bloqueio comercial. Não restaurar banco para reverter frontend. Migrações registradas não devem ser reaplicadas.
+
+Alternativa gratuita autorizada: Cloudflare Pages, projeto `nortfood`, mesma aplicação e mesmo backend. Gerar com `NORTFOOD_APP_URL=https://nortfood.pages.dev`, `NORTFOOD_PUBLIC_ACCOUNTS=yes` e `pnpm build:pages`; auditar com `node scripts/audit-release.cjs dist-pages`. Publicar apenas o conteúdo de `dist-pages`, com `_headers` e `404.html` nativo, sem a regra 404 específica do Netlify. O upload direto aceita o pacote estático; não altera DNS nem o site Netlify. Reversão: republicar um pacote previamente validado. Configurar a origem exata na allowlist do Auth antes de homologar OAuth. Uma sessão não é transferida entre as duas origens.
+
+Se a cota do Netlify impedir produção, não contratar créditos nem tentar contornar o bloqueio. O código pode ser sincronizado com `[skip netlify]` no commit público, conforme o mecanismo oficial, sem tentar novo deploy. O próximo commit sem esse marcador volta a disparar o build automático.
 
 ## Testes e limites
 
