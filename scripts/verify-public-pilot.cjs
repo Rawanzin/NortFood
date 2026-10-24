@@ -3,8 +3,8 @@ const fs=require('node:fs/promises'),path=require('node:path'),assert=require('n
 const labels=['Todos','Hambúrgueres','Pizzas','Açaí','Doces','Salgados','Sorvetes','Marmitas','Bebidas','Padarias','Mercados','Outros'];
 async function main(){
  const origin=new URL(process.argv[2]||'https://nortfood.netlify.app');
- if(origin.protocol!=='https:'||origin.pathname!=='/'||origin.search||origin.hash||origin.username||origin.password||!/^([a-z0-9]+--)?nortfood\.netlify\.app$/.test(origin.hostname))throw Error('OFFICIAL_SITE_OR_ITS_DEPLOY_REQUIRED');
- const folder=path.resolve('test-results/public-pilot-20261023',origin.hostname==='nortfood.netlify.app'?'official':'preview');await fs.mkdir(folder,{recursive:true});
+ if(origin.protocol!=='https:'||origin.pathname!=='/'||origin.search||origin.hash||origin.username||origin.password||!/^([a-z0-9]+--)?nortfood\.netlify\.app$/.test(origin.hostname)&&origin.hostname!=='nortfood.pages.dev')throw Error('OFFICIAL_SITE_OR_ITS_DEPLOY_REQUIRED');
+ const folder=path.resolve('test-results/public-pilot-20261023',origin.hostname==='nortfood.netlify.app'?'official':origin.hostname==='nortfood.pages.dev'?'pages':'preview');await fs.mkdir(folder,{recursive:true});
  const get=async url=>{const response=await fetch(url,{signal:AbortSignal.timeout(20000)});assert.equal(response.status,200,url);return response;};
  const configText=await (await get(new URL('/config.js',origin))).text(),config=JSON.parse(configText.match(/Object\.freeze\((\{.*\})\)/)[1]);
  assert.equal(config.publicAccounts,true);assert.notEqual(config.publicPreview,true);assert.equal(config.supabaseUrl,'https://zwkhqahivthzivmuirjr.supabase.co');

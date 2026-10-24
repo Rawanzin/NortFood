@@ -18,12 +18,12 @@ async function removeOwned(target) {
   await fs.rm(absolute, {recursive:true,force:true});
 }
 async function stagingDirectory(output) {
-  if (!['dist','dist-homologacao','dist-hostinger'].includes(output)) throw Error('INVALID_BUILD_TARGET');
+  if (!['dist','dist-homologacao','dist-hostinger','dist-pages'].includes(output)) throw Error('INVALID_BUILD_TARGET');
   await fs.mkdir(buildRoot,{recursive:true});
   return fs.mkdtemp(path.join(buildRoot,output+'-'));
 }
 async function promote(staged, output) {
-  if (!['dist','dist-homologacao','dist-hostinger'].includes(output) || !path.resolve(staged).startsWith(buildRoot + path.sep)) throw Error('INVALID_BUILD_TARGET');
+  if (!['dist','dist-homologacao','dist-hostinger','dist-pages'].includes(output) || !path.resolve(staged).startsWith(buildRoot + path.sep)) throw Error('INVALID_BUILD_TARGET');
   const destination = path.resolve(output);
   const previous = path.join(buildRoot,'previous-'+output+'-'+crypto.randomUUID());
   const stat = await fs.lstat(destination).catch(error=>{if(error.code!=='ENOENT')throw error;return null;});

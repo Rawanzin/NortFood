@@ -7,7 +7,7 @@ test('Migrações PostgreSQL, RLS, checkout transacional e comissões',async t=>
  // A 001 já aplicada é somente fixture declarativa; executamos as três pendentes.
  for(const file of (await fs.readdir('supabase/migrations')).sort().filter(f=>!f.startsWith('202610120001_')))await db.exec(await fs.readFile('supabase/migrations/'+file,'utf8'));
  const admin=uuid(),clientA=uuid(),clientB=uuid(),sellerA=uuid(),sellerB=uuid();
- for(const [id,name] of [[admin,'Admin Teste'],[clientA,'Cliente A'],[clientB,'Cliente B'],[sellerA,'Loja A'],[sellerB,'Loja B']])await db.query('insert into auth.users(id,raw_user_meta_data) values($1,$2)',[id,JSON.stringify({name,role:'admin'})]);
+ for(const [id,name] of [[admin,'Admin Teste'],[clientA,'Cliente A'],[clientB,'Cliente B'],[sellerA,'Loja A'],[sellerB,'Loja B']])await db.query('insert into auth.users(id,raw_user_meta_data) values($1,$2)',[id,JSON.stringify({name,role:'admin',phone:'38999999999',terms_version:'2026-10-public-v2'})]);
  await db.query('insert into private.admin_users(user_id) values($1)',[admin]);
  // Esta suíte cobre isolamento entre duas lojas aprovadas. A expansão é explícita,
  // administrativa e apenas no PostgreSQL descartável; a suíte piloto testa limite 1.

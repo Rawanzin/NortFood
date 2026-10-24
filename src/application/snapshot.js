@@ -12,6 +12,8 @@ export function snapshotView(context, loaded, previous, history = []) {
     authEmail: context.user.email,
     pendingStoreName: context.user.user_metadata?.requested_store_name || '',
     pendingStorePhone: context.user.user_metadata?.requested_store_phone || '',
+    customerOnboarded: !!context.onboarding?.customer,
+    sellerOnboarded: !!context.onboarding?.seller,
     role: context.is_admin ? 'admin' : context.memberships.length ? 'seller' : 'customer',
     storeId: context.memberships.some(row => row.store_id === previous?.storeId) ? previous.storeId : context.memberships[0]?.store_id,
   } : null;

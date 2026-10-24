@@ -2,10 +2,12 @@ const fs=require('node:fs/promises');const path=require('node:path');const esbui
 const {publicConfig}=require('./public-config.cjs');
 const {stagingDirectory,promote,removeOwned,releaseId,validatePublicScripts}=require('./build-output.cjs');
 (async()=>{
- const homologation=process.argv.includes('--homologation'),hostinger=process.argv.includes('--hostinger');
+ const homologation=process.argv.includes('--homologation'),hostinger=process.argv.includes('--hostinger'),pages=process.argv.includes('--pages');
+ if(pages&&(homologation||hostinger))throw Error('PAGES_BUILD_TARGET_CONFLICT');
  if(hostinger&&!homologation)throw Error('HOSTINGER_REQUIRES_ISOLATED_HOMOLOGATION');
- const output=hostinger?'dist-hostinger':homologation?'dist-homologacao':'dist';
+ const output=pages?'dist-pages':hostinger?'dist-hostinger':homologation?'dist-homologacao':'dist';
  const config=homologation?{...require('./homologation-config.cjs').configuration().publicConfig,appUrl:process.env.NORTFOOD_HOMOLOGATION_PREVIEW_URL||''}:publicConfig(true),url=config.supabaseUrl,key=config.publishableKey;
+ if(pages&&config.appUrl!=='https://nortfood.pages.dev')throw Error('PAGES_APPROVED_ORIGIN_REQUIRED');
  if(!url||!key)throw Error('SUPABASE_PUBLIC_CONFIGURATION_REQUIRED: configure URL e chave publica antes de gerar a publicacao.');
  if(homologation&&url!=='https://zrczgghucwsaxqnyaapk.supabase.co')throw Error('HOMOLOGATION_PREVIEW_TARGET_FORBIDDEN');
  if(homologation&&config.appUrl){const u=new URL(config.appUrl);if(u.protocol!=='https:'||u.origin!==config.appUrl||u.username||u.password)throw Error('HOMOLOGATION_PREVIEW_ORIGIN_INVALID');}
@@ -26,7 +28,8 @@ const {stagingDirectory,promote,removeOwned,releaseId,validatePublicScripts}=req
  for(const file of ['404.html','favicon.ico','favicon-16x16.png','favicon-32x32.png','apple-touch-icon.png','site.webmanifest'])await fs.copyFile(file,staged+'/'+file);
  await fs.writeFile(staged+'/404.html',theme.render(await fs.readFile('404.html','utf8')));
  await fs.copyFile('site.webmanifest',staged+'/manifest.webmanifest');
- if(!hostinger)await fs.copyFile('_redirects',staged+'/_redirects');
+ // Pages utiliza 404.html nativo. Não enviar a regra 404 específica do Netlify.
+ if(!hostinger&&!pages)await fs.copyFile('_redirects',staged+'/_redirects');
  await fs.writeFile(staged+'/config.js','window.NORTFOOD_CONFIG = Object.freeze('+JSON.stringify(config)+');\n');
  if(!hostinger)await fs.writeFile(staged+'/_headers',site.renderHeaders(await fs.readFile('_headers','utf8'),config)+(homologation?'\n  X-Robots-Tag: noindex, nofollow\n':''));
  const release=await releaseId(staged);
