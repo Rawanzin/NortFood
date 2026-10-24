@@ -1,0 +1,38 @@
+.signup-flow { gap: 16px; }
+.signup-progress { display: grid; gap: 8px; }
+.signup-progress-label { margin: 0; color: var(--muted, #6b7280); font-size: .75rem; line-height: 1.5; }
+.signup-progress-track { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.signup-progress-track li { overflow: hidden; border-top: 3px solid var(--line, #e5e7eb); padding-top: 6px; color: var(--muted, #6b7280); font-size: .7rem; line-height: 1.4; white-space: nowrap; text-overflow: ellipsis; }
+.signup-progress-track [aria-current="step"] { border-color: var(--red, #e4262f); color: var(--text, #202124); font-weight: 600; }
+.signup-progress-track .is-complete { border-color: #e7a3a7; }
+.signup-panel { display: grid; min-width: 0; gap: 12px; }
+.signup-panel[hidden], .signup-actions [hidden] { display: none; }
+.signup-panel h3 { margin: 0; font-size: 1rem; line-height: 1.45; font-weight: 650; }
+.signup-panel-description { margin: -6px 0 2px; color: var(--muted, #6b7280); font-size: .8rem; line-height: 1.6; }
+.signup-panel .field { min-width: 0; }
+.signup-panel .field > label { color: var(--text, #202124); text-transform: none; letter-spacing: normal; font-size: .8rem; }
+.signup-panel input, .signup-panel select { min-width: 0; font-size: 1rem; }
+.signup-panel input[aria-invalid="true"], .signup-panel select[aria-invalid="true"] { border-color: var(--red, #e4262f); }
+.signup-panel .onboarding-address { margin: 0; padding: 0; border: 0; }
+.signup-panel .onboarding-address > legend { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.signup-address-search { display: flex; align-items: center; justify-content: center; min-height: 44px; border: 1px solid var(--line, #e5e7eb); border-radius: 12px; background: var(--surface, #fff); color: var(--red, #e4262f); font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer; }
+.signup-address-search:hover { border-color: var(--red, #e4262f); }
+.signup-feedback { margin: 0; color: var(--red, #e4262f); font-size: .8rem; line-height: 1.5; }
+.signup-feedback:empty { display: none; }
+.signup-actions { display: flex; gap: 10px; position: relative; padding-bottom: max(2px, env(safe-area-inset-bottom)); }
+.signup-actions > .btn { flex: 1; min-width: 0; min-height: 46px; margin: 0; }
+.signup-actions .signup-back { flex: 0 0 auto; min-width: 88px; }
+.signup-panel .field-error { font-size: .75rem; line-height: 1.5; }
+.signup-panel :focus-visible, .signup-actions :focus-visible, .signup-address-search:focus-visible { outline: 2px solid var(--red, #e4262f); outline-offset: 3px; }
+.nf-signup-address-dialog { box-sizing: border-box; width: min(480px, calc(100% - 24px)); max-height: calc(100dvh - 24px); overflow: auto; padding: 20px; border: 1px solid var(--line, #e5e7eb); border-radius: 20px; background: var(--surface, #fff); color: var(--text, #202124); }
+.nf-signup-address-dialog::backdrop { background: rgb(20 24 29 / 38%); }
+.nf-signup-address-dialog .nf-address-page { padding: 0; }
+.nf-signup-address-close { display: block; margin-left: auto; margin-bottom: 8px; }
+.nf-signup-address-dialog .nf-address-heading h1 { font-size: 1.15rem; }
+.nf-signup-address-dialog .nf-address-saved { margin-top: 18px; }
+.nf-signup-address-dialog .nf-address-empty { font-size: .8rem; }
+@media (max-width: 430px) {
+  .signup-panel { gap: 11px; }
+  .signup-flow { gap: 14px; }
+  .signup-progress-track { gap: 6px; }
+}

@@ -11,7 +11,7 @@ const {stagingDirectory,promote,removeOwned,releaseId,validatePublicScripts}=req
  if(!url||!key)throw Error('SUPABASE_PUBLIC_CONFIGURATION_REQUIRED: configure URL e chave publica antes de gerar a publicacao.');
  if(homologation&&url!=='https://zrczgghucwsaxqnyaapk.supabase.co')throw Error('HOMOLOGATION_PREVIEW_TARGET_FORBIDDEN');
  if(homologation&&config.appUrl){const u=new URL(config.appUrl);if(u.protocol!=='https:'||u.origin!==config.appUrl||u.username||u.password)throw Error('HOMOLOGATION_PREVIEW_ORIGIN_INVALID');}
- validatePublicScripts(['app.js','pwa.js','sw.js','theme.js','assets/local-entry.js','assets/backend-loader.js','assets/site-runtime.js','assets/ui-runtime.js','assets/store-location.js']);
+ validatePublicScripts(['app.js','pwa.js','sw.js','theme.js','assets/local-entry.js','assets/backend-loader.js','assets/site-runtime.js','assets/ui-runtime.js','assets/store-location.js','assets/delivery-address.js','assets/signup-flow.js']);
  const bundles=await Promise.all([
  esbuild.build({entryPoints:['src/backend.js'],bundle:true,minify:true,format:'iife',target:'es2022',external:['./pdf-export.js'],outfile:'assets/nortfood-backend.js',write:false}),
  esbuild.build({entryPoints:['src/pdf-export.js'],bundle:true,minify:true,format:'esm',target:'es2022',outfile:'assets/pdf-export.js',write:false}),

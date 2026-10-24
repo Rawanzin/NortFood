@@ -28,7 +28,7 @@ test('Theme switch preserves typed credentials, cart and navigation without re-r
  try{
   browser=await chromium.launch({channel:'chrome',headless:true});const page=await browser.newPage({colorScheme:'light',viewport:{width:390,height:844}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+app.address().port+'/?demo=1');await page.locator('.header').waitFor();await page.locator('[data-action="auth"]').first().click();
-  await page.locator('#auth-email').fill('regressao-local@example.test');await page.locator('#auth-password').fill('somente-regressao-local');
+  await page.locator('[data-auth-mode=login]').click();await page.locator('#auth-email').fill('regressao-local@example.test');await page.locator('#auth-password').fill('somente-regressao-local');
   await page.emulateMedia({colorScheme:'dark'});await page.waitForFunction(()=>document.documentElement.dataset.theme==='dark');assert.equal(await page.locator('#auth-email').inputValue(),'regressao-local@example.test');assert.equal(await page.locator('#auth-password').inputValue(),'somente-regressao-local');
   assert.match(await page.locator('.modal [data-brand-logo]').getAttribute('src'),/logo-dark\.webp$/);assert.equal(await page.locator('#auth-email').evaluate(e=>getComputedStyle(e).colorScheme),'dark only');await page.keyboard.press('Escape');
   await page.locator('[data-action="cart"]').first().click();assert.equal(await page.locator('.drawer').isVisible(),true);await page.emulateMedia({colorScheme:'light'});assert.equal(await page.locator('.drawer').isVisible(),true);
