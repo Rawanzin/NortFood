@@ -162,8 +162,9 @@
       }
       return !invalid.length;
     }
-    function advance() { if (validate()) goTo(current + 1, { focus: true }); }
+    function advance() { if (options.beforeAdvance?.() === false) return; if (validate()) goTo(current + 1, { focus: true }); }
     function onSubmit(event) {
+      if (options.beforeAdvance?.() === false) { event.preventDefault(); event.stopImmediatePropagation(); return; }
       if (current < panels.length - 1) { event.preventDefault(); event.stopImmediatePropagation(); advance(); }
       else if (!validate({ all: true })) { event.preventDefault(); event.stopImmediatePropagation(); }
     }

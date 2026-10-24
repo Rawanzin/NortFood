@@ -40,7 +40,8 @@ test('Repetir cadastro existente preserva rascunho vinculado e não o transfere 
  await api.register(email,'fixture-password-original',payload.name,payload.phone,'',payload);assert.equal(api.pendingOnboarding(email,'pending-original').bound,true);
  next={user:{id:'obfuscated-existing',identities:[]},session:null};await assert.rejects(()=>api.register(email,'different-fixture-password','Nome repetido',payload.phone,'',{...payload,name:'Nome repetido',address:{...payload.address,street:'Rua que não deve sobrescrever'}}),/já possui conta/);
  const retained=api.pendingOnboarding(email,'pending-original');assert.equal(retained.bound,true);assert.equal(retained.name,payload.name);assert.equal(retained.address.street,payload.address.street);assert.equal(JSON.stringify(retained).includes('fixture-password'),false);
- next={user:{id:'different-identity'},session:null};await api.register(email,'fixture-password-new','Outra identidade',payload.phone,'',payload);assert.equal(api.pendingOnboarding(email,'different-identity').bound,false);assert.equal(api.pendingOnboarding(email,'pending-original').bound,true);
+ // Antes retornava o payload original com bound:false: isso ainda vazava dados ao formulário.
+ next={user:{id:'different-identity'},session:null};await api.register(email,'fixture-password-new','Outra identidade',payload.phone,'',payload);assert.equal(api.pendingOnboarding(email,'different-identity'),null);assert.equal(api.pendingOnboarding(email),null);assert.equal(api.pendingOnboarding(email,'pending-original').bound,true);assert.equal(api.pendingOnboarding(email,'pending-original').address.street,payload.address.street);
 });
 
 test('Cadastro de vendedor preserva dados de retomada e separa telefone comercial do pessoal',async()=>{
@@ -64,4 +65,16 @@ test('Lembrar de mim seleciona persistencia; sessao temporaria nao sobrevive a n
 });
 test('Navegador sem acesso a storage conserva somente memoria, sem quebrar inicializacao',async()=>{
  const {createAuthStorage}=await import('../src/auth-storage.mjs');const blocked={getItem(){throw Error('blocked')},setItem(){throw Error('blocked')},removeItem(){throw Error('blocked')}};const store=createAuthStorage(blocked,blocked);assert.equal(store.getItem('sdk-token'),null);store.setItem('sdk-token','local-fixture');assert.equal(store.getItem('sdk-token'),'local-fixture');assert.equal(createAuthStorage(blocked,blocked).getItem('sdk-token'),null);store.removeItem('sdk-token');assert.equal(store.getItem('sdk-token'),null);
+});
+
+test('API de rascunhos sobrevive erro, limpa UI no Auth aceito e preserva recibos de outras identidades',async()=>{
+ const {client}=transport();client.auth.getUser=async()=>({data:{user:null}});const api=await backend(client);await api.initialize(async()=>{});
+ const payload={kind:'customer',name:'CLIENTE A',phone:'38999999999',consent:true,address:{street:'Rua Sintética',number:'10',neighborhood:'Centro',city:'Porteirinha',state:'MG'}};
+ const form={name:payload.name,identifier:'a@example.test',phone:payload.phone,street:payload.address.street,password:'NUNCA_SALVAR',confirmPassword:'NUNCA_SALVAR',consent:true};
+ const saved=api.saveSignupDraft('customer','a@example.test',form,1);assert.ok(saved.id);assert.equal(api.getSignupDraft('seller','a@example.test'),null);assert.equal(JSON.stringify(api.getSignupDraft('customer','a@example.test')).includes('NUNCA_SALVAR'),false);
+ client.auth.signUp=async()=>({data:{},error:{code:'signup_disabled'}});await assert.rejects(()=>api.register('a@example.test','12345678',payload.name,payload.phone,'',payload),/bloqueados/);assert.equal(api.getSignupDraft('customer','a@example.test').data.name,payload.name);
+ client.auth.signUp=async()=>({data:{user:{id:'pending-a',email:'a@example.test'},session:null},error:null});await api.register('a@example.test','12345678',payload.name,payload.phone,'',payload);assert.equal(api.getSignupDraft('customer','a@example.test'),null);assert.equal(api.pendingOnboarding('a@example.test','pending-a').bound,true);
+ api.saveSignupDraft('seller','b@example.test',{name:'VENDEDOR B',identifier:'b@example.test',storeName:'Loja B'},0);assert.equal(api.pendingOnboarding('a@example.test','pending-a').bound,true);
+ client.auth.signInWithPassword=async()=>({data:{user:{id:'b-id',email:'b@example.test'}},error:null});await api.login('b@example.test','12345678');assert.equal(api.signupDrafts('seller').length,0);assert.equal(api.saveSignupDraft('customer','c@example.test',{name:'Não gravar após Auth'}),null);
+ api.clearOnboarding();assert.equal(api.pendingOnboarding('a@example.test','pending-a').bound,true);await api.logout();assert.equal(api.pendingOnboarding('a@example.test','pending-a'),null);assert.equal(api.signupDrafts('customer').length,0);
 });

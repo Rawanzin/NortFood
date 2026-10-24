@@ -19,6 +19,13 @@
 .signup-address-search:hover { border-color: var(--red, #e4262f); }
 .signup-feedback { margin: 0; color: var(--red, #e4262f); font-size: .8rem; line-height: 1.5; }
 .signup-feedback:empty { display: none; }
+.signup-draft-choice { padding: 12px; border: 1px solid var(--line, #e5e7eb); border-radius: 12px; background: var(--surface, #fff); }
+.signup-draft-choice p, .signup-draft-note { margin: 0 0 8px; color: var(--text, #202124); font-size: .8rem; line-height: 1.5; }
+.signup-draft-choice > div { display: grid; gap: 2px; }
+.signup-draft-choice button { min-height: 44px; text-align: left; white-space: normal; }
+.signup-draft-choice button small { margin-left: 6px; color: var(--muted, #6b7280); font-weight: 400; }
+.signup-draft-choice > small { display: block; margin-top: 8px; color: var(--muted, #6b7280); font-size: .7rem; line-height: 1.5; }
+.signup-draft-note { border-left: 2px solid var(--red, #e4262f); padding-left: 10px; }
 .signup-actions { display: flex; gap: 10px; position: relative; padding-bottom: max(2px, env(safe-area-inset-bottom)); }
 .signup-actions > .btn { flex: 1; min-width: 0; min-height: 46px; margin: 0; }
 .signup-actions .signup-back { flex: 0 0 auto; min-width: 88px; }

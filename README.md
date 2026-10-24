@@ -18,6 +18,8 @@ A migração 009 acrescenta ingredientes removíveis, snapshot no pedido, restri
 
 O cadastro usa etapas de contato, endereço e acesso, senha nova com mínimo de 8 caracteres sem exigência de composição, confirmação e mensagens em português. A migração 012 acrescenta CEP privado de endereços e referência comercial, preserva permissões existentes e não reaplica as anteriores. Endereço de entrega usa pesquisa explícita, formulário manual e GPS opcional; mapa é uma confirmação secundária. A seleção aproximada não grava dados automaticamente. `node scripts/verify-ux-public.cjs https://nortfood.pages.dev/` verifica a interface pública sem criar contas ou pedidos; `--geocode` limita a uma busca de endereço comercial e uma identificação de ponto escolhido. Testes de GPS controlado não comprovam GPS físico.
 
+Formulários interrompidos oferecem Retomar ou Recomeçar na mesma aba, por até 24 horas, separados por tipo de conta e e-mail. Senhas, confirmação de senha e o aceite da interface não são guardados; devem ser preenchidos novamente. Recibos de cadastro enviado permanecem vinculados à identidade Auth correspondente. Sair da conta limpa os rascunhos da aba. O mapa para explorar lojas é separado da seleção do endereço de entrega; somente lojas elegíveis com coordenadas cadastradas podem aparecer.
+
 Android/Chrome: usar Instalar quando oferecido pelo navegador. iPhone/iPad: Safari → Compartilhar → Adicionar à Tela de Início. O SW protege respostas privadas, oferece uma página offline e pede confirmação para aplicar atualização. Fechar/cancelar o convite de instalação adia nova oferta por 30 dias. Instalação física em aparelhos exige ensaio específico.
 
 ## Publicação e reversão

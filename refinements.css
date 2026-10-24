@@ -209,13 +209,27 @@ body{padding-bottom:calc(80px + env(safe-area-inset-bottom))}
 /* Os dois caminhos de cadastro permanecem legíveis em 320px. */
 .auth-role-switch button{white-space:normal;min-width:0;min-height:48px;line-height:1.35;flex:1}
 /* Mapa de descoberta integrado; mantém a página e a posição de rolagem. */
-.nearby-modal{width:min(900px,100%);max-height:calc(100dvh - 32px);overflow-y:auto}
-.nearby-search>div{display:flex;gap:8px;margin-top:6px}
-.nearby-search input{min-width:0;flex:1}
-[data-nearby-canvas]{height:clamp(260px,46dvh,480px);border-radius:16px;overflow:hidden;isolation:isolate}
-[data-nearby-results],[data-nearby-stores]{display:flex;flex-wrap:wrap;gap:8px}
+.modal.nearby-modal{width:min(820px,100%);max-height:calc(100dvh - 32px);padding:20px;overflow-y:auto;overscroll-behavior:contain;scroll-padding-block:16px}
+.nearby-modal .modal-head{align-items:center;gap:12px;margin-bottom:8px}
+.nearby-modal .modal-head h2{font-size:20px;line-height:1.3}
+.nearby-modal .nearby-intro{margin:0 0 14px;font-size:13px;line-height:1.5}
+.nearby-search{position:relative}
+.nearby-search label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.nearby-search>div{display:flex;align-items:center;gap:8px;min-height:52px;padding:4px 6px 4px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface,#fff)}
+.nearby-search svg,.nearby-gps svg{width:20px;height:20px;flex:none;color:var(--accent-text,var(--red))}
+.nearby-modal .nearby-search input{min-width:0;flex:1;width:auto;min-height:44px;padding:8px 0;border:0;border-radius:0;background:transparent;box-shadow:none;color:var(--ink);font-size:16px;line-height:1.4}
+.nearby-modal #nearby-query{background:transparent}
+.nearby-modal .nearby-search button{min-height:44px;padding:10px 12px;border:0;border-radius:9px;background:var(--soft,#fff4f4);color:var(--accent-text,var(--red));font-size:13px;font-weight:700;box-shadow:none}
+.nearby-gps{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;margin:4px 0;padding:10px 0;border:0;background:transparent;color:var(--ink);font:inherit;font-size:14px;line-height:1.4;text-align:left}
+.nearby-modal [data-nearby-status],.nearby-modal [data-nearby-empty]{font-size:12px;line-height:1.5;margin:10px 0}
+[data-nearby-canvas]{height:clamp(220px,34dvh,380px);border-radius:13px;overflow:hidden;isolation:isolate}
+[data-nearby-results]{display:grid;gap:8px}
+[data-nearby-results] button{max-width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;text-align:left;overflow-wrap:anywhere}
+[data-nearby-stores]{display:flex;flex-wrap:wrap;gap:8px}
+.nearby-modal>small{display:block;margin-top:12px;color:var(--muted);font-size:11px;line-height:1.5}
 .nearby-modal .leaflet-popup-content{color:#222;line-height:1.5}
-@media(max-width:600px){.modal-scrim:has(.nearby-modal){align-items:flex-end;padding:0}.nearby-modal{max-height:calc(100dvh - env(safe-area-inset-top) - 12px);border-radius:24px 24px 0 0;padding-bottom:calc(20px + env(safe-area-inset-bottom))}.nearby-search>div{flex-wrap:wrap}.nearby-search input{width:100%}}
+@media(max-width:600px){.modal-scrim:has(.nearby-modal){align-items:flex-end;padding:0}.modal.nearby-modal{max-height:calc(100dvh - env(safe-area-inset-top) - 12px);border-radius:22px 22px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}.nearby-modal [data-nearby-canvas]{height:clamp(200px,32dvh,300px)}}
+@media(max-width:600px) and (max-height:600px){.modal.nearby-modal{max-height:calc(100dvh - env(safe-area-inset-top) - 8px)}.nearby-modal [data-nearby-canvas]{height:clamp(150px,30dvh,200px)}}
 
 /* Refinamento comum às áreas de conta, catálogo e gestão, sem alterar seus fluxos. */
 main.wrap { min-width:0; }
