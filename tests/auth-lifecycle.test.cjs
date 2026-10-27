@@ -1,6 +1,6 @@
 // Mocks de transporte do SDK para regressao de concorrencia do frontend.
 const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),esbuild=require('esbuild'),path=require('node:path');
-async function backend(client,options={}){const result=await esbuild.build({entryPoints:[path.resolve(__dirname,'../src/backend.js')],bundle:true,write:false,format:'iife',platform:'browser',plugins:[{name:'auth-transport-fixture',setup(build){build.onResolve({filter:/^@supabase\/supabase-js$/},()=>({path:'client',namespace:'fixture'}));build.onResolve({filter:/^\.\/commercial\.js$/},()=>({path:'controller',namespace:'fixture'}));build.onLoad({filter:/.*/,namespace:'fixture'},a=>({contents:a.path==='client'?'export const createClient=()=>window.__client':'export const controller=()=>({})'}));}}]});const window={addEventListener(){},removeEventListener(){},NORTFOOD_CONFIG:{supabaseUrl:'https://fixture.supabase.co',publishableKey:'sb_publishable_fixture',appUrl:'http://localhost:4173'},__client:client,localStorage:{getItem:()=>null,setItem(){},removeItem(){}},sessionStorage:{getItem:()=>null,setItem(){},removeItem(){}}};vm.runInNewContext(result.outputFiles[0].text,{window,document:{visibilityState:'visible',addEventListener(){},removeEventListener(){}},navigator:{onLine:true},location:{origin:'http://localhost:4173'},AbortController,fetch:options.fetch||fetch,setTimeout:()=>0,clearTimeout,clearInterval(){},setInterval:()=>0,URLSearchParams});return window.NortFoodBackend;}
+async function backend(client,options={}){const result=await esbuild.build({entryPoints:[path.resolve(__dirname,'../src/backend.js')],bundle:true,write:false,format:'iife',platform:'browser',plugins:[{name:'auth-transport-fixture',setup(build){build.onResolve({filter:/^@supabase\/supabase-js$/},()=>({path:'client',namespace:'fixture'}));build.onResolve({filter:/^\.\/commercial\.js$/},()=>({path:'controller',namespace:'fixture'}));build.onLoad({filter:/.*/,namespace:'fixture'},a=>({contents:a.path==='client'?'export const createClient=()=>window.__client':'export const controller=()=>({})'}));}}]});const window={addEventListener(){},removeEventListener(){},NORTFOOD_CONFIG:{supabaseUrl:'https://fixture.supabase.co',publishableKey:'sb_publishable_fixture',appUrl:'http://localhost:4173'},__client:client,localStorage:{getItem:()=>null,setItem(){},removeItem(){}},sessionStorage:{getItem:()=>null,setItem(){},removeItem(){}}};vm.runInNewContext(result.outputFiles[0].text,{window,document:{visibilityState:'visible',addEventListener(){},removeEventListener(){}},navigator:{onLine:true},location:{origin:'http://localhost:4173',...options.location},AbortController,fetch:options.fetch||fetch,setTimeout:()=>0,clearTimeout,clearInterval(){},setInterval:()=>0,URLSearchParams});return window.NortFoodBackend;}
 function transport(){let changed;const channel={on(){return this},subscribe(){return this}};const client={auth:{getUser:async()=>({data:{user:{id:'first',email:'first@example.test'}}}),onAuthStateChange:fn=>{changed=fn},signOut:async()=>{changed('SIGNED_OUT',null);return {error:null}}},channel:()=>channel,removeChannel:()=>Promise.resolve()};return {client,change:(...args)=>changed(...args)};}
 
 test('Cadastro por e-mail respeita provedor e bloqueio global, mesmo com Google habilitado',async()=>{
@@ -65,6 +65,30 @@ test('Lembrar de mim seleciona persistencia; sessao temporaria nao sobrevive a n
 });
 test('Navegador sem acesso a storage conserva somente memoria, sem quebrar inicializacao',async()=>{
  const {createAuthStorage}=await import('../src/auth-storage.mjs');const blocked={getItem(){throw Error('blocked')},setItem(){throw Error('blocked')},removeItem(){throw Error('blocked')}};const store=createAuthStorage(blocked,blocked);assert.equal(store.getItem('sdk-token'),null);store.setItem('sdk-token','local-fixture');assert.equal(store.getItem('sdk-token'),'local-fixture');assert.equal(createAuthStorage(blocked,blocked).getItem('sdk-token'),null);store.removeItem('sdk-token');assert.equal(store.getItem('sdk-token'),null);
+});
+
+test('Retorno expirado conserva o código seguro antes de o SDK limpar o fragmento',async()=>{
+ const {client}=transport();const api=await backend(client,{location:{hash:'#error=access_denied&error_code=otp_expired&error_description=NAO_EXIBIR',search:''}});
+ assert.equal(api.authReturnError(),'access_denied');assert.equal(api.authReturnCode(),'otp_expired');
+});
+
+test('Trocar a identidade encerra a intenção de recuperação da conta anterior',async()=>{
+ const {client,change}=transport();const api=await backend(client);await api.initialize(async()=>{});
+ change('PASSWORD_RECOVERY',{user:{id:'recovering',email:'a@example.test'}});assert.equal(api.recoveryRequested(),true);
+ change('TOKEN_REFRESHED',{user:{id:'recovering',email:'a@example.test'}});assert.equal(api.recoveryRequested(),true);
+ change('SIGNED_IN',{user:{id:'other',email:'b@example.test'}});assert.equal(api.recoveryRequested(),false);
+});
+
+test('Reenvio e recuperação validam e normalizam o e-mail antes de enviar ao provedor',async()=>{
+ const {client}=transport(),requests=[];client.auth.resend=async request=>{requests.push(request);return {error:null}};client.auth.resetPasswordForEmail=async(email,options)=>{requests.push({email,...options});return {error:null}};
+ const api=await backend(client);await api.resend('  pending@example.test  ');await api.recover('  pending@example.test  ');
+ assert.equal(requests[0].email,'pending@example.test');assert.equal(requests[1].email,'pending@example.test');assert.equal(requests[0].options.emailRedirectTo,'http://localhost:4173');assert.equal(requests[1].redirectTo,'http://localhost:4173');
+ await assert.rejects(()=>api.resend('invalid'),/e-mail válido/);await assert.rejects(()=>api.recover('invalid'),/e-mail válido/);assert.equal(requests.length,2);
+});
+
+test('Falha ao atualizar senha mantém recuperação e mostra a causa permitida',async()=>{
+ const {client,change}=transport();client.auth.updateUser=async()=>({data:null,error:{code:'same_password'}});const api=await backend(client);await api.initialize(async()=>{});change('PASSWORD_RECOVERY',{user:{id:'recovering'}});
+ await assert.rejects(()=>api.password('long-fixture-password'),/diferente da senha atual/);assert.equal(api.recoveryRequested(),true);
 });
 
 test('API de rascunhos sobrevive erro, limpa UI no Auth aceito e preserva recibos de outras identidades',async()=>{
