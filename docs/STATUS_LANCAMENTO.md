@@ -102,3 +102,15 @@ Encerramento. Os **639 registros originais** foram novamente conferidos após os
 **NO-GO comercial.** A intervenção atual é configurar credenciais SMTP válidas diretamente no projeto de homologação e confirmar acesso à caixa de testes, para comprovar os links e a entrega de e-mail. Depois, repetir o cadastro e a recuperação e apresentar a versão para autorização explícita de publicação. [Abrir SMTP Settings da homologação](https://supabase.com/dashboard/project/zrczgghucwsaxqnyaapk/auth/smtp)
 
 Evidências sanitizadas em `test-results/launch-20261108/continuation`. O pacote estático `29915122726c604b754b` continua em `dist-pages`. A correção do avatar é da Edge Function e acompanha separadamente o plano de publicação.
+
+## 10. Reteste do SMTP e preparação final de 08/11/2026
+
+A confirmação obrigatória foi verificada no endpoint Auth de homologação antes da tentativa. O SMTP personalizado continua ativo em `smtp.ethereal.email:587`. Após o ajuste informado, cadastro, reenvio e recuperação retornaram **HTTP 500 `unexpected_failure`**. Os três eventos exibiram **`535 "Authentication failed"`** nos logs Auth, respectivamente às 03:23:42, 03:26:55 e 03:26:58 de São Paulo. A recusa ocorreu na autenticação do SMTP. O erro observado não é uma resposta de limite nem um erro de renderização de template. A configuração de confirmação, templates e limites foi preservada. [Diagnóstico de erros Auth do Supabase](https://supabase.com/kb/troubleshooting/resolving-500-status-authentication-errors-7bU5U8)
+
+Dez verificações no Auth hospedado passaram com quatro contas e links sintéticos provisionados no banco. A senha foi recusada antes da confirmação. Links válidos de confirmação e recuperação abriram sessão para a conta certa. Links com expiração simulada e links já usados foram recusados com `otp_expired` e sem sessão. O log registrou separadamente link expirado e token de uso único não encontrado. A recuperação aceitou a nova senha e recusou a anterior. Esse ensaio valida a verificação dos links no servidor. A entrega e a confirmação a partir da caixa postal ainda dependem do SMTP.
+
+As quatro contas sintéticas foram desativadas e seus tokens invalidados. A homologação terminou com 20 lojas, 36 pedidos e piloto desativado. As únicas alterações persistentes do reteste ficaram restritas aos registros sintéticos do Auth e aos eventos de auditoria gerados pelo serviço.
+
+A regressão completa passou com **237 testes, zero falhas, zero cancelamentos e zero ignorados**. A candidata `29915122726c604b754b` foi recompilada em `dist-pages` com os 126 arquivos aprovados na auditoria. O site oficial passou em 40 sondagens públicas. Evidências em `test-results/launch-20261108/smtp-final`.
+
+**NO-GO comercial.** Salvar um par válido de usuário e senha SMTP e disponibilizar a caixa Ethereal correspondente para comprovar recebimento, confirmação, reenvio e recuperação. A autorização de publicação e de pedidos comerciais continua pendente. [SMTP Settings da homologação](https://supabase.com/dashboard/project/zrczgghucwsaxqnyaapk/auth/smtp)
