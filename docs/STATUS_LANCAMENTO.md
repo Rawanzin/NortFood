@@ -63,10 +63,21 @@ Resultados atuais em [test-results/launch-20261108](../test-results/launch-20261
 
 ## 7. Publicação e intervenção indispensável
 
-Candidata estática `29915122726c604b754b` em [dist-pages](../dist-pages/), código `0d26d136744cc679c0c084a52593b6c06e069b2c` na branch `codex/lancamento-20261108`. Git local e pacote preparado. Produção continua na implantação [a29cb6e6](https://a29cb6e6.nortfood.pages.dev). Sem publicação, alterações em contas reais ou ativação de pedidos.
+Candidata estática `29915122726c604b754b` em [dist-pages](../dist-pages/), código `0d26d136744cc679c0c084a52593b6c06e069b2c` na branch `codex/lancamento-20261108`. Branch sincronizada com o GitHub e pacote preparado. Produção continua na implantação [a29cb6e6](https://a29cb6e6.nortfood.pages.dev). Sem publicação, alterações em contas reais ou ativação de pedidos.
 
 1. Renovar o login no painel [NortFood-Homologacao](https://supabase.com/dashboard/project/zrczgghucwsaxqnyaapk) pelo navegador do ChatGPT. Com a sessão aberta, confirmar o esquema restaurado, fazer novo backup e executar os ensaios hospedados. Se o SMTP antigo continuar inválido, informar a credencial diretamente em **Authentication → Emails → SMTP Settings**. A skill Computer Use exige que o titular insira e confirme novas credenciais no painel. Não enviar segredos pelo chat.
 2. Se o Google for exigido na estreia, disponibilizar o cliente OAuth Web autorizado em Google Cloud. Callback do projeto principal `https://zwkhqahivthzivmuirjr.supabase.co/auth/v1/callback`. O segredo deve ser inserido diretamente na configuração do provedor Google no Supabase. [Instruções do Supabase](https://supabase.com/docs/guides/auth/social-login/auth-google)
 3. Disponibilizar aparelhos para câmera/QR, instalação e GPS e definir a loja autorizada para o piloto após o ensaio. A verificação de entregabilidade pode usar um domínio de remetente controlado pelo NortFood e autenticado conforme o Brevo. [Requisitos de autenticação do Brevo](https://help.brevo.com/hc/en-us/articles/12163873383186-Authenticate-your-domain-with-Brevo-Brevo-code-DKIM-DMARC)
 
 **Veredito NO-GO.** A etapa de publicação fica depois da homologação hospedada da candidata, confirmação operacional da loja e autorização explícita do responsável.
+
+## 8. Continuação de 08/11/2026
+
+A branch foi enviada para [Rawanzin/NortFood](https://github.com/Rawanzin/NortFood/tree/codex/lancamento-20261108) com push normal. O GitHub confirmou inicialmente `f778ab1b225724347337ea6574fcc237e490fb8c`. Esse commit contém `0d26d136744cc679c0c084a52593b6c06e069b2c`, a revisão usada no pacote candidato `29915122726c604b754b`. O pacote em `dist-pages` passou a auditoria de 126 arquivos.
+
+- Homologação hospedada, acesso anônimo. Seis de sete sondagens passaram. Auth com cadastro habilitado e confirmação obrigatória, catálogo vazio, piloto desativado, pedidos e administração protegidos, preflight de mídia de loja aceito. A função de avatar respondeu 404. A resolução padrão do computador retornou falha de DNS. As sondagens HTTPS usaram a resolução pública mantendo hostname e validação TLS.
+- Site oficial. 40 verificações públicas e 18 verificações Chrome aprovadas na release publicada `ab341e2835462747437a`.
+- Retestes locais. 10 comerciais e 25 de segurança aprovados. A restauração local do snapshot histórico de homologação conferiu 34 tabelas, 639 registros e 56 chaves estrangeiras. O ensaio aplicou 016 e 017 localmente. O [inventário somente leitura](../supabase/checks/launch_staging_017_readonly.sql) também passou em PGlite antes e depois de 017, com o piloto desativado e o bucket de avatar privado.
+- O snapshot histórico restaurado é evidência de recuperação local. O backup atual do projeto, o inventário administrativo restaurado, a aplicação hospedada da 017 e os testes autenticados de ponta a ponta aguardam o acesso ao painel. O CLI não possui token administrativo nesta sessão. A tela **Sign in | Supabase Dashboard** foi aberta no navegador do ChatGPT para o titular renovar a sessão. Depois, executar o inventário e exportar o snapshot de aplicação para a pasta privada de backups, validar a restauração e só então aplicar 017. [Backups do Supabase](https://supabase.com/docs/guides/platform/backups)
+
+**NO-GO mantido.** A publicação e o piloto comercial aguardam homologação autenticada e autorização explícita. Os resultados anônimos estão em `test-results/launch-20261108/continuation/staging-public.json`.
