@@ -108,7 +108,7 @@ async function harness(overrides={}){
  const handler=createAvatarHandler({allowedOrigins:['https://nortfood.pages.dev'],getConfig:()=>({url:'https://fixture.supabase.co',publishable:'public-fixture',secret:'secret-fixture'}),createClient:(_url,key)=>key==='public-fixture'?client:admin,sanitize:async()=>{calls.push('decode');if(overrides.decodeError)throw Error('invalid');return webp},randomUUID:()=>next});
  const request=async({method='POST',origin='https://nortfood.pages.dev',auth='Bearer fixture-jwt',extra=null,blob=null,body=null}={})=>{
   let payload=body;if(method==='POST'&&!body){payload=new FormData();payload.append('file',new Blob([blob||await image('Png')],{type:'image/png'}),'avatar.png');if(extra)payload.append(extra,'forged');}
-  return handler(new Request('https://fixture.supabase.co/functions/v1/profile-avatar',{method,headers:{...(origin?{origin}:{}),...(auth?{authorization:auth}:{})},...(payload?{body:payload}:{})}));
+  return handler(new Request('https://fixture.supabase.co/functions/v1/profile-avatar',{method,headers:{...(origin?{origin}:{}),...(auth?{authorization:auth}:{})},...(payload?{body:payload,...(payload instanceof ReadableStream?{duplex:'half'}:{})}:{})}));
  };
  return {request,calls,removed,user,old,path:user+'/'+next+'.webp',current:()=>current};
 }
@@ -130,6 +130,7 @@ test('Avatar HTTP: falhas limpam só órfãos próprios; commit incerto preserva
  let h=await harness({commitLost:true});let response=await h.request();assert.equal(response.status,200);assert.deepEqual(await response.json(),{path:h.path});assert.equal(h.current(),h.path);assert.deepEqual(h.removed,[]);
  h=await harness({foreignPrevious:randomUUID()+'/'+randomUUID()+'.webp'});assert.equal((await h.request()).status,200);assert.deepEqual(h.removed,[]);
  h=await harness();response=await h.request({method:'DELETE'});assert.equal(response.status,200);assert.deepEqual(await response.json(),{path:null});assert.equal(h.current(),null);assert.deepEqual(h.removed,[h.old]);assert.deepEqual(h.calls,['auth','set','remove']);
+ h=await harness();response=await h.request({method:'DELETE',body:new ReadableStream({start(controller){controller.close();}})});assert.equal(response.status,200);assert.deepEqual(h.removed,[h.old]);
  h=await harness();assert.equal((await h.request({method:'DELETE',body:'{"user_id":"forged"}'})).status,400);assert.deepEqual(h.calls,['auth']);
  h=await harness({commitError:true,readError:{message:'offline'}});assert.equal((await h.request()).status,503);assert.deepEqual(h.removed,[]);
 });

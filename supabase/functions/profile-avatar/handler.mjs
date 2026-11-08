@@ -59,7 +59,21 @@ export function createAvatarHandler({allowedOrigins,getConfig,createClient,sanit
   };
 
   if(req.method==='DELETE'){
-   if(req.body)return error(400,'A remoção da foto não aceita dados de outro perfil.');
+   // Alguns gateways representam um DELETE vazio como um stream sem bytes.
+   if(req.body){
+    const reader=req.body.getReader();
+    try{
+     while(true){
+      const {done,value}=await reader.read();
+      if(done)break;
+      if(value.byteLength)return error(400,'A remoção da foto não aceita dados de outro perfil.');
+     }
+    }catch{
+     return error(400,'Não foi possível ler a requisição de remoção.');
+    }finally{
+     void reader.cancel().catch(()=>{});
+    }
+   }
    const before=await readCurrent();let result;
    try{result=await client.rpc('nf_set_profile_avatar',{p_path:null});}catch{result={error:true};}
    if(result.error){const current=await readCurrent();if(!current.known||current.path!==null)return error(503,'Não foi possível remover a foto.');}
