@@ -1,15 +1,20 @@
 const fs=require('node:fs/promises');
 async function main(){
- const origin=new URL(process.argv[2]||'https://nortfood.netlify.app');
- if(origin.protocol!=='https:'||origin.pathname!=='/'||origin.search||origin.hash||origin.username||origin.password||!origin.hostname.endsWith('.netlify.app'))throw Error('EXACT_NETLIFY_HTTPS_ORIGIN_REQUIRED');
+ const origin=new URL(process.argv[2]||'https://nortfood.pages.dev');
+ const pages=/^(?:[a-z0-9]+\.)?nortfood\.pages\.dev$/.test(origin.hostname),netlify=/^(?:[a-z0-9-]+--)?nortfood\.netlify\.app$/.test(origin.hostname);
+ if(origin.protocol!=='https:'||origin.port||origin.pathname!=='/'||origin.search||origin.hash||origin.username||origin.password||!pages&&!netlify)throw Error('EXACT_NORTFOOD_HTTPS_ORIGIN_REQUIRED');
+ const canonicalOrigin=pages?'https://nortfood.pages.dev':'https://nortfood.netlify.app';
  const results=[],run=async(name,path,expected,check=()=>true)=>{
-  const r=await fetch(new URL(path,origin),{redirect:'manual',signal:AbortSignal.timeout(20000)}),body=await r.text();
+  let r=await fetch(new URL(path,origin),{redirect:'manual',signal:AbortSignal.timeout(20000)});
+  const canonical=path.endsWith('.html')?new URL(path.slice(0,-5),origin).href:null;
+  if(expected===200&&[301,308].includes(r.status)&&canonical&&new URL(r.headers.get('location')||'/',origin).href===canonical)r=await fetch(canonical,{redirect:'error',signal:AbortSignal.timeout(20000)});
+  const body=await r.text();
   const passed=r.status===expected&&check(r,body);results.push({name,path,status:r.status,expected,passed});return body;
  };
  const html=await run('public_shell','/',200,(r,s)=>s.includes('<title>NortFood</title>')&&r.headers.get('x-content-type-options')==='nosniff'&&r.headers.get('content-security-policy')?.includes("frame-ancestors 'none'"));
  const script=await run('public_config','/config.js',200,(r,s)=>r.headers.get('cache-control')==='no-store'&&s.includes('"publicAccounts":true')&&!s.includes('"publicPreview":true')&&s.includes('zwkhqahivthzivmuirjr')&&!s.includes('sb_secret_'));
  const match=script.match(/Object\.freeze\((\{.*\})\)/);if(!match)throw Error('PUBLIC_CONFIG_INVALID');const config=JSON.parse(match[1]);
- results.push({name:'canonical_matches_official_origin',passed:html.includes('rel="canonical" href="'+config.appUrl+'/"')&&config.appUrl==='https://nortfood.netlify.app'});
+ results.push({name:'canonical_matches_official_origin',passed:html.includes('rel="canonical" href="'+config.appUrl+'/"')&&config.appUrl===canonicalOrigin});
  await run('service_worker','/sw.js',200,(r,s)=>r.headers.get('cache-control')==='no-cache'&&!s.includes('__NORTFOOD_RELEASE__')&&s.includes('isSupabaseOrPrivate'));
  const manifest=JSON.parse(await run('manifest','/manifest.webmanifest',200,(r,s)=>r.headers.get('content-type')?.includes('manifest+json')));
  results.push({name:'standalone_manifest',passed:manifest.name==='NortFood'&&manifest.display==='standalone'&&manifest.id==='/'&&manifest.scope==='/'});
@@ -25,11 +30,13 @@ async function main(){
   ['anonymous_messages_denied','/rest/v1/messages?select=id&limit=0',401],
   ['anonymous_admin_denied','/rest/v1/rpc/nf_admin_dashboard',401]
  ]){const r=await fetch(config.supabaseUrl+route,{headers,signal:AbortSignal.timeout(20000)});const data=await r.json();results.push({name,status:r.status,expected,passed:r.status===expected&&(!validate||validate(data))});}
+ const preflight=await fetch(config.supabaseUrl+'/functions/v1/upload-media',{method:'OPTIONS',headers:{...headers,Origin:config.appUrl,'Access-Control-Request-Method':'POST'},signal:AbortSignal.timeout(20000)});
+ results.push({name:'upload_preflight_allowed',status:preflight.status,expected:200,passed:preflight.status===200&&preflight.headers.get('access-control-allow-origin')===config.appUrl});
  const upload=await fetch(config.supabaseUrl+'/functions/v1/upload-media',{method:'POST',headers:{...headers,Origin:config.appUrl},signal:AbortSignal.timeout(20000)});
  results.push({name:'anonymous_upload_denied',status:upload.status,expected:401,passed:upload.status===401});
  const http=await fetch(origin.href.replace('https:','http:'),{redirect:'manual'});results.push({name:'http_redirects_to_https',status:http.status,passed:[301,302,307,308].includes(http.status)&&http.headers.get('location')?.startsWith(origin.origin)});
  const report={checkedAt:new Date().toISOString(),origin:origin.origin,passed:results.every(r=>r.passed),scope:'Anonymous HTTPS/HTTP static/privacy/manifest/backend denial checks. No user or order created. Does not approve authenticated commercial journeys or physical installation.',results};
- await fs.mkdir('test-results/launch-20261023',{recursive:true});const label=origin.hostname==='nortfood.netlify.app'?'official':'preview';await fs.writeFile('test-results/launch-20261023/https-'+label+'.json',JSON.stringify(report,null,2));
+ await fs.mkdir('test-results/launch-20261023',{recursive:true});const label=pages?'pages':origin.hostname==='nortfood.netlify.app'?'official':'preview';await fs.writeFile('test-results/launch-20261023/https-'+label+'.json',JSON.stringify(report,null,2));
  console.log(JSON.stringify({origin:report.origin,checks:results.length,passed:results.filter(r=>r.passed).length,failed:results.filter(r=>!r.passed)},null,2));if(!report.passed)process.exitCode=1;
 }
 main().catch(e=>{console.error(e.message);process.exitCode=1});

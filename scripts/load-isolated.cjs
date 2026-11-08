@@ -2,7 +2,8 @@
 const http=require('node:http'),fs=require('node:fs/promises'),{performance}=require('node:perf_hooks');
 const {server}=require('./serve.cjs');
 async function main(){
- const app=await server({root:require('node:path').resolve('dist'),config:{mode:'commercial',publicPreview:true}});
+ const buildRoot=process.argv[2]||'dist';if(!['dist','dist-pages'].includes(buildRoot))throw Error('STATIC_BUILD_TARGET_REQUIRED');
+ const app=await server({root:require('node:path').resolve(buildRoot),config:{mode:'commercial',publicPreview:true}});
  await new Promise(r=>app.listen({port:0,host:'127.0.0.1',backlog:2048},r));
  const agent=new http.Agent({keepAlive:true,maxSockets:1000}),origin='http://127.0.0.1:'+app.address().port;
  const scenarios=[];
@@ -16,7 +17,8 @@ async function main(){
    scenarios.push(result);console.log(JSON.stringify(result));
   }
  }finally{agent.destroy();await new Promise(r=>app.close(r))}
- const report={checkedAt:new Date().toISOString(),target:origin,productionUsersValidated:0,backendConcurrencyValidated:false,limitations:'Loopback static reads only. Does not establish Netlify capacity, PostgreSQL throughput, Supabase free quotas, full journeys, device performance or 1000 real concurrent users.',scenarios};
+ const report={checkedAt:new Date().toISOString(),target:origin,buildRoot,passed:scenarios.every(row=>row.errors===0),productionUsersValidated:0,backendConcurrencyValidated:false,limitations:'Loopback static reads only. Does not establish hosting capacity, PostgreSQL throughput, Supabase free quotas, full journeys, device performance or 1000 real concurrent users.',scenarios};
  await fs.mkdir('test-results/launch-20261023',{recursive:true});await fs.writeFile('test-results/launch-20261023/load-local.json',JSON.stringify(report,null,2));
+ if(!report.passed)process.exitCode=1;
 }
 main().catch(e=>{console.error(e.message);process.exitCode=1});

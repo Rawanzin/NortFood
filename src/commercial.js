@@ -8,11 +8,13 @@ import {resolveCatalogImages} from './application/catalog-images.js';
 import {snapshotView} from './application/snapshot.js';
 import {sessionCommands} from './application/session-commands.js';
 import {orderWhatsApp} from './application/whatsapp.js';
+import {readProductGroups} from './application/product-options.js';
+import {productOptionsFields,optionGroupFields} from './presentation/product-options.js';
 import {categoryKey} from '../assets/base-categories.js';
 export function controller(bridge,api){
  const {esc,money,toast,modal,render}=bridge;
  const dining=createDining({...bridge,reload:()=>refresh()},api);window.NortFoodQR=dining;
- let authBusy=false,messageKeys=new WeakMap(),context=null,admin=null,reports={},historyRows=[],historyCursor=null,historyBusy=false,historyDone=false,storeDrafts=[],storeSetups=[];
+ let authBusy=false,fulfillmentBusy=false,messageKeys=new WeakMap(),context=null,admin=null,reports={},historyRows=[],historyCursor=null,historyBusy=false,historyDone=false,storeDrafts=[],storeSetups=[];
  let identityRevision=api.sessionRevision?.(),invitationCheckedFor=null;
  let storage;try{storage=window.sessionStorage}catch{}
  const checkout=createCheckout({storage});
@@ -56,6 +58,7 @@ export function controller(bridge,api){
     projected.current&&/^[0-9a-f-]{36}$/i.test(requested)&&!projected.orders.some(o=>o.id===requested)?api.rpc('nf_order_detail',{p_order:requested}).catch(()=>null):null,
     resolveCatalogImages(stores,path=>api.image(path),current)
    ]);
+   if(projected.current?.avatar_path&&api.avatarImage)projected.current.avatarUrl=await api.avatarImage(projected.current.avatar_path);
    if(!current()){refresh('POLL').catch(()=>{});return;}
    // Everything above is prepared privately; publish one coherent identity after the final await.
    const d=data(),u=projected.current;
@@ -70,11 +73,15 @@ export function controller(bridge,api){
    if(projected.address)bridge.applyAddress(projected.address);
    if(loaded.categories)bridge.categories?.(loaded.categories);
    dining.sync(loaded.diningContext||null);
+   bridge.syncFulfillment?.();
    if(newOrder)bridge.alertNewOrder?.();
    if(event==='PASSWORD_RECOVERY')bridge.setView('settings');
    if(u&&event==='SIGNED_IN'&&!authBusy&&document.querySelector('#auth-form,[data-auth-confirmation]')){bridge.closeModal();bridge.setView(authDestination(u));}
    bridge.connection('connected',loaded.pilotEnabled===false?'Você pode acessar sua conta e preparar sua loja. Pedidos aguardam a liberação da loja piloto.':'');
-   if(!authBusy&&event!=='BOOT'&&!(event==='PASSWORD_RECOVERY'&&document.querySelector('#password-form'))&&(!document.querySelector('.modal,.drawer,#store-form,input:focus,textarea:focus,select:focus')||!['POLL','DATABASE_CHANGE'].includes(event))){const y=scrollY;render();if(['POLL','DATABASE_CHANGE'].includes(event))scrollTo(0,y)}
+   // Supabase emits SIGNED_IN again when a tab regains focus. Preserve the
+   // existing credential form for that same identity; switches already clear it.
+   const keepPasswordForm=(event==='PASSWORD_RECOVERY'||event==='SIGNED_IN'&&u?.id&&previous?.id===u.id)&&document.querySelector('#password-form');
+   if(!authBusy&&event!=='BOOT'&&!keepPasswordForm&&(!document.querySelector('.modal,.drawer,#store-form,input:focus,textarea:focus,select:focus')||!['POLL','DATABASE_CHANGE'].includes(event))){const y=scrollY;render();if(['POLL','DATABASE_CHANGE'].includes(event))scrollTo(0,y)}
    if(event==='PASSWORD_RECOVERY')bridge.showRecovery?.();
   }catch(error){if(!current()){refresh('POLL').catch(()=>{});return;}bridge.connection('error',error.message);if(!['POLL','DATABASE_CHANGE'].includes(event))throw error}
  }
@@ -83,8 +90,34 @@ export function controller(bridge,api){
  function authDestination(u){let intent;try{intent=storage?.getItem('nortfood-auth-intent');if(u.sellerOnboarded||intent!=='seller'&&u.customerOnboarded)storage?.removeItem('nortfood-auth-intent')}catch{}return u.role==='admin'?'admin':u.role==='seller'?(u.sellerOnboarded?'seller':'profile'):intent==='seller'||u.pendingStoreName||!u.customerOnboarded?'profile':'home';}
  async function run(operation,message){const commands=sessionCommands(api);await operation();commands.assertCurrent();bridge.closeModal();await refresh();commands.assertCurrent();if(message)toast(message)}
  function requireLogin(){if(!api.configured)throw new Error('Supabase não configurado. Pedidos comerciais estão bloqueados.');if(!data().current)throw new Error('Entre na sua conta para continuar.');}
+ async function readFulfillment(){
+  const s=bridge.cartStore();if(!s)return;
+  const commands=sessionCommands(api),catalog=await commands.rpc('nf_catalog');commands.assertCurrent();
+  if(!Array.isArray(catalog))throw new Error('Não foi possível conferir a disponibilidade da loja. Tente novamente.');
+  const latest=catalog.find(row=>row.id===s.id);
+  if(latest)Object.assign(s,{deliveryEnabled:latest.delivery_enabled,pickupEnabled:latest.pickup_enabled,serverOpen:latest.is_open,paused:latest.paused,status:latest.status});else s.serverOpen=false;
+  bridge.syncFulfillment?.();
+ }
  async function click(t){
   const d=data(),u=d.current,commands=sessionCommands(api);
+  if(u&&(t.dataset.action==='checkout'||t.dataset.fulfillment))await readFulfillment();
+  if(t.dataset.storeFulfillment){
+   requireLogin();const s=d.stores.find(s=>s.id===u.storeId);
+   if(u.role!=='seller'||!s)throw new Error('Acesso exclusivo para estabelecimentos.');
+   const key=t.dataset.storeFulfillment;if(!['delivery','pickup'].includes(key))return true;
+   if(t.disabled||fulfillmentBusy)return true;fulfillmentBusy=true;
+   const switches=[...(t.closest?.('.fulfillment-controls')?.querySelectorAll('[data-store-fulfillment]')||[t])];switches.forEach(button=>button.disabled=true);
+   try{await commands.rpc('nf_set_fulfillment',{p_store:s.id,p_delivery:key==='delivery'?!s.deliveryEnabled:s.deliveryEnabled!==false,p_pickup:key==='pickup'?!s.pickupEnabled:!!s.pickupEnabled});commands.assertCurrent();await refresh();toast('Formas de atendimento salvas. Pedidos já recebidos foram preservados.');}
+   catch(error){if(['PGRST202','42883'].includes(error.code))throw new Error('Os atalhos de atendimento ainda não estão disponíveis no servidor. Use Entrega e Retirada em Perfil da loja e salve o perfil.');throw error;}
+   finally{fulfillmentBusy=false;switches.forEach(button=>{if(button.isConnected)button.disabled=false});}return true;
+  }
+  if(t.dataset.addOptionGroup!==undefined){
+   requireLogin();const container=t.closest('#product-form')?.querySelector('[data-product-option-groups]');if(!container)return true;
+   const groups=container.querySelectorAll('[data-product-option-group]');if(groups.length>=20)throw new Error('Use até 20 grupos de adicionais.');
+   const keys=[...container.querySelectorAll('[name=optionGroupKey]')].map(input=>Number(input.value));const key=keys.length?Math.max(...keys)+1:0;
+   container.insertAdjacentHTML('beforeend',optionGroupFields(null,key,esc));container.lastElementChild.querySelector('input:not([type=hidden])')?.focus();return true;
+  }
+  if(t.dataset.removeOptionGroup!==undefined){requireLogin();t.closest('[data-product-option-group]')?.remove();return true;}
   if(t.dataset.whatsappOrder || t.dataset.copyWhatsapp){
    requireLogin();
    const order=d.orders.find(o=>o.id===(t.dataset.whatsappOrder||t.dataset.copyWhatsapp));
@@ -104,7 +137,7 @@ export function controller(bridge,api){
   if(t.dataset.saveStoreDraft!==undefined){
    requireLogin();const f=document.getElementById('store-form');if(!f)return true;
    const form=new FormData(f),payload={};
-   for(const name of ['name','about','categories','phone','whatsapp','street','number','complement','neighborhood','city','hours','workingDays','pickupEnabled','deliveryEnabled','zones','estimateMinutes','minimumOrder','payments','deliveryInfo']){
+   for(const name of ['name','about','categories','primaryCategory','phone','whatsapp','street','number','complement','neighborhood','city','state','postal_code','address_reference','hours','workingDays','pickupEnabled','deliveryEnabled','zones','estimateMinutes','minimumOrder','payments','deliveryInfo']){
     payload[name]=['categories','workingDays','payments'].includes(name)?form.getAll(name):['pickupEnabled','deliveryEnabled'].includes(name)?form.has(name):String(form.get(name)||'');
    }
    t.disabled=true;try{const old=storeDrafts.find(row=>row.store_id===u.storeId),version=await commands.rpc('nf_save_store_draft',{p_store:u.storeId,p_data:payload,p_version:old?.version||0});storeDrafts=storeDrafts.filter(row=>row.store_id!==u.storeId);storeDrafts.push({store_id:u.storeId,data:payload,version});toast('Rascunho salvo na sua conta. Imagens e localização são salvas em Salvar perfil.');}finally{t.disabled=false;}return true;
@@ -115,9 +148,21 @@ export function controller(bridge,api){
   if(t.dataset.loadHistory!==undefined){requireLogin();if(historyBusy)return true;if(historyDone){toast('Nenhum pedido anterior.');return true}historyBusy=true;try{const owner=u.id,known=new Set(d.orders.map(o=>o.id));let added=0,pages=0;do{const rows=await commands.rpc('nf_order_history',{p_before:historyCursor?.created_at||null,p_before_id:historyCursor?.id||null,p_limit:50});if(data().current?.id!==owner)return true;const last=rows.at(-1);if(last)historyCursor={created_at:last.created_at,id:last.id};historyDone=rows.length<50;for(const row of rows)if(!known.has(row.id)){known.add(row.id);historyRows.push(orderView(row,u));added++}pages++;}while(!added&&!historyDone&&pages<10);await refresh();toast(added?'Pedidos anteriores carregados.':historyDone?'Nenhum pedido anterior.':'Histórico consultado. Continue para ver anteriores.');}finally{historyBusy=false}return true}
   if(t.dataset.reportPeriod){const today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),date=new Date(today+'T12:00:00Z');if(t.dataset.reportPeriod==='week')date.setUTCDate(date.getUTCDate()-((date.getUTCDay()+6)%7));if(t.dataset.reportPeriod==='month')date.setUTCDate(1);reports[u.storeId]=await commands.rpc('nf_report',{p_store:u.storeId,p_from:date.toISOString().slice(0,10),p_to:today});render();return true}
   if(t.dataset.action==='logout'){await api.logout();invalidateIdentity();bridge.setView('home');await refresh();return true}
-  if(t.dataset.action==='google-auth'){if(bridge.authMode()==='register'&&!document.querySelector('#auth-form [name=consent]')?.checked)throw new Error('Aceite os termos antes de continuar com Google.');t.disabled=true;try{try{const f=document.getElementById('auth-form');if(bridge.authRole()==='seller')storage?.setItem('nortfood-google-store',JSON.stringify({name:f?.elements.storeName?.value||'',phone:f?.elements.phone?.value||'',at:Date.now()}));else storage?.removeItem('nortfood-google-store');}catch{}await api.google(bridge.authRole());}catch(error){const alert=document.getElementById('auth-error');if(alert)alert.textContent=error.message;throw error;}finally{t.disabled=false;}return true}
+  if(t.dataset.action==='google-auth'){
+   if(t.disabled||t.getAttribute('aria-disabled')==='true')return true;
+   t.disabled=true;
+   try{
+    if(await api.googleAvailable()!==true){t.setAttribute('aria-disabled','true');throw new Error('Login com Google indisponível neste ambiente. Entre com e-mail e senha.');}
+    if(bridge.authMode()==='register'&&!document.querySelector('#auth-form [name=consent]')?.checked)throw new Error('Aceite os termos antes de continuar com Google.');
+    try{const f=document.getElementById('auth-form');if(bridge.authRole()==='seller')storage?.setItem('nortfood-google-store',JSON.stringify({name:f?.elements.storeName?.value||'',phone:f?.elements.phone?.value||'',at:Date.now()}));else storage?.removeItem('nortfood-google-store');}catch{}
+    await api.google(bridge.authRole());
+   }catch(error){const alert=document.getElementById('auth-error');if(alert)alert.textContent=error.message;throw error;}
+   finally{t.disabled=t.getAttribute('aria-disabled')==='true';}
+   return true;
+  }
   if(t.dataset.confirmProductPrice){if(!confirm('Confirmo que o preço salvo deste produto está correto para a jarra de 750 ml. A disponibilidade ainda precisa ser ativada no cardápio.'))return true;await run(()=>commands.rpc('nf_confirm_product_price',{p_product:t.dataset.confirmProductPrice}),'Preço confirmado. Você pode revisar a disponibilidade.');return true;}
-  if(t.dataset.action==='recover-password'){modal('<div class="modal-head"><h2>Recuperar acesso</h2><button class="close" data-action="close-modal">×</button></div><form id="recover-form" class="form"><label>E-mail<input name="email" type="email" required autocomplete="email"></label><button class="btn">Solicitar recuperação</button></form>');return true}
+  if(t.dataset.action==='resend-confirmation'){bridge.authConfirmation(document.getElementById('auth-form')?.elements.identifier?.value||'',true);return true;}
+  if(t.dataset.action==='recover-password'){const email=document.getElementById('auth-form')?.elements.identifier?.value||'';modal('<div class="modal-head"><h2>Recuperar acesso</h2><button class="close" data-action="close-modal">×</button></div><form id="recover-form" class="form"><label>E-mail<input name="email" type="email" required autocomplete="email" maxlength="254" value="'+esc(email)+'"></label><p role="alert" aria-live="polite"></p><button class="btn">Solicitar recuperação</button></form>');return true}
   if(t.dataset.fav||t.dataset.productFav){requireLogin();const kind=t.dataset.productFav?'products':'stores',id=t.dataset.productFav||t.dataset.fav,list=bridge.favorites(kind);await run(()=>commands.favorite(id,kind,list.includes(id)),'Favoritos atualizados no servidor.');return true}
   if(t.dataset.status||t.dataset.cancel||t.dataset.liveNext){requireLogin();const id=t.dataset.status||t.dataset.cancel||t.dataset.liveOrder,o=d.orders.find(o=>o.id===id);if(!o)throw new Error('Pedido indisponível.');const next=t.dataset.cancel?'cancelled':t.dataset.liveNext||Object.keys(statusNames).find(k=>statusNames[k]===t.dataset.next);await run(()=>commands.rpc('nf_transition',{p_order:id,p_next:next,p_version:o.version}),'Estado confirmado pelo servidor.');return true}
   if(t.dataset.confirmPayment){await run(()=>commands.rpc('nf_confirm_payment',{p_order:t.dataset.confirmPayment}),'Recebimento informado pela loja; não é confirmação bancária automática.');return true}
@@ -155,7 +200,7 @@ export function controller(bridge,api){
    bridge.closeModal();bridge.setView(authDestination(d.current));render();return true;
    }finally{authBusy=false}
   }
-  if(f.id==='resend-confirmation-form'){await api.resend(String(form.get('email')||''));toast('Se a conta aguarda confirmação, o provedor enviará um novo link.');return true;}
+  if(f.id==='resend-confirmation-form'){await api.resend(String(form.get('email')||''));const message='Se a conta aguarda confirmação, confira a caixa de entrada e o spam para acessar o novo link.';const alert=f.querySelector('[role=alert]');if(alert)alert.textContent='';const status=f.querySelector('[data-confirmation-status]');if(status)status.textContent=message;toast(message);return true;}
   if(f.id==='recover-form'){await api.recover(String(form.get('email')));bridge.closeModal();toast('Se o e-mail estiver cadastrado, o provedor enviará instruções.');return true}
   requireLogin();const commands=sessionCommands(api);
   if(f.id==='store-setup-form'){await run(()=>commands.rpc('nf_save_setup',{p_store:u.storeId,p_delivery:api.cents(form.get('deliveryReference')||0),p_replacement:api.cents(form.get('replacementReference')||0),p_owner_confirmed:!!form.get('ownerConfirmed')}),'Referências comerciais salvas. Frete cobrado depende dos bairros configurados.');return true;}
@@ -184,7 +229,7 @@ export function controller(bridge,api){
    await refresh();toast((Object.hasOwn(payload,'latitude')?(payload.latitude===null?'Localização removida. ':'Localização salva. '):'')+'Perfil salvo no servidor.');render();return true;
   }
   if(f.id==='product-form'){
-   const s=d.stores.find(s=>s.id===u.storeId),old=s.products[Number(f.dataset.index)],lines=String(form.get('extras')||'').split(/\r?\n/).filter(l=>l.trim()),options=lines.map(line=>{const match=line.match(/^(.+):([^:]+)$/);if(!match)throw new Error('Adicionais: use nome:preço.');return {name:match[1].trim(),price_cents:api.cents(match[2])}}),groups=options.length?[{name:String(form.get('groupName')||'Adicionais'),min_choices:Number(form.get('minChoices')||0),max_choices:Number(form.get('maxChoices')||options.length),options}]:[];
+   const s=d.stores.find(s=>s.id===u.storeId),old=s.products[Number(f.dataset.index)],groups=readProductGroups(form,api.cents);
    const payload={ingredients:String(form.get('ingredients')||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean),name:String(form.get('name')),description:String(form.get('desc')),price_cents:api.cents(form.get('price')),category:String(form.get('category')),available:!!form.get('available'),notes_label:String(form.get('productNotes')||'')};const file=f.elements.image?.files?.[0];if(file)payload.image_url=await commands.upload(u.storeId,file);
    await run(()=>commands.rpc('nf_save_product',{p_store:u.storeId,p_id:old?.[9]||null,p_data:payload,p_groups:groups}),'Produto salvo com identidade permanente.');return true;
   }
@@ -192,7 +237,7 @@ export function controller(bridge,api){
    if(checkout.busy)return true;const owner=u.id,revision=api.sessionRevision?.();{
     const s=bridge.cartStore();if(!s)throw new Error('Carrinho vazio.');dining.validate(s);const a=bridge.addresses().find(a=>a.formatted===u.address),request={store_id:s.id,fulfillment:bridge.fulfillment(),address_id:bridge.fulfillment()==='delivery'?a?.id||null:null,table_token:bridge.fulfillment()==='dine_in'?dining.mode(s)?.token:null,payment_method:Object.keys(paymentNames).find(k=>paymentNames[k]===form.get('payment')),notes:String(form.get('notes')||''),expected_total_cents:Number(f.dataset.reviewedTotal),items:d.cart.map(row=>({product_id:row.pid,quantity:row.qty,option_ids:(row.extras||[]).map(x=>x.id),notes:row.note||'',...(row.removedIngredients?.length?{removed_ingredients:[...row.removedIngredients].sort()}: {})}))};
     let id;
-    try{id=await checkout.place(owner,request,api)}catch(error){if(error.message.includes('valores mudaram'))await refresh();throw error}
+    try{id=await checkout.place(owner,request,api)}catch(error){if(error.message.includes('valores mudaram')||/DELIVERY_UNAVAILABLE|PICKUP_UNAVAILABLE|STORE_UNAVAILABLE|não oferece|indisponível|fechad/i.test(error.message))await refresh();throw error}
     if(data().current?.id!==owner||api.sessionRevision?.()!==revision){toast('Pedido confirmado na conta que iniciou a compra. Entre nela para acompanhar.');return true;}
     d.cart=[];bridge.saveCart();bridge.closeModal();await refresh();
     if(data().current?.id===owner&&api.sessionRevision?.()===revision){bridge.selectOrder(id);bridge.setView('order-detail');render();toast('Pedido registrado no servidor. Aguarde a resposta da loja.');}return true;
@@ -213,5 +258,5 @@ export function controller(bridge,api){
   if(!orderWhatsApp(order,store))return '';
   return '<section class="dash-card"><div class="dash-card-body"><h2>Contato pelo WhatsApp</h2><p>O pedido permanece registrado no NortFood. Aguarde o aceite da loja no acompanhamento. Abrir o WhatsApp não confirma envio, leitura ou aceite.</p><div class="detail-actions"><button class="btn outline" data-whatsapp-order="'+esc(order.id)+'">Abrir WhatsApp da loja</button><button class="btn outline" data-copy-whatsapp="'+esc(order.id)+'">Copiar resumo completo</button></div><small>O link inclui produtos e total registrado. Endereço e observações pessoais só entram no resumo completo que você escolher copiar e compartilhar.</small></div></section>';
  }
- return {pendingForUser:()=>api.pendingOnboarding?.(data().current?.email,data().current?.id),sellerIntent:()=>{try{return storage?.getItem('nortfood-auth-intent')==='seller'}catch{return false}},initialDestination:()=>api.authReturned?.()&&data().current?authDestination(data().current):null,refresh,click,submit,orderActions,financePage,adminPage,whatsappActions,context:()=>context,setupFor:id=>storeSetups.find(row=>row.store_id===id),draftFor:id=>storeDrafts.find(row=>row.store_id===id)};
+ return {productOptions:product=>productOptionsFields(product,esc),pendingForUser:()=>api.pendingOnboarding?.(data().current?.email,data().current?.id),sellerIntent:()=>{try{return storage?.getItem('nortfood-auth-intent')==='seller'}catch{return false}},initialDestination:()=>api.authReturned?.()&&data().current?authDestination(data().current):null,refresh,click,submit,orderActions,financePage,adminPage,whatsappActions,context:()=>context,setupFor:id=>storeSetups.find(row=>row.store_id===id),draftFor:id=>storeDrafts.find(row=>row.store_id===id)};
 }

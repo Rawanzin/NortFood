@@ -8,11 +8,14 @@ test('PWA browser: install, update notice, draft preservation, activated new rel
     const url=new URL(req.url,'http://localhost');
     if(url.pathname==='/') {res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache'});res.end('<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><script src="/theme.js"></script><link rel="stylesheet" href="/pwa.css"><link rel="stylesheet" href="/theme.css"><script defer src="/pwa.js"></script><h1>'+release+'</h1><button data-theme-toggle>Alternar tema</button><form><label>Rascunho<input name="draft"></label></form></html>');return;}
     if(url.pathname==='/config.js'){res.writeHead(200,{'Content-Type':'text/javascript','Cache-Control':'no-store'});res.end('window.__release='+JSON.stringify(release));return;}
+    // Match Pages HTML canonicalization, including the offline fallback.
+    if(url.pathname==='/offline.html'){res.writeHead(308,{Location:'/offline'});res.end();return;}
     try {
-      const allowed=['/sw.js','/offline.html','/styles.css','/theme.js','/theme.css','/pwa.css','/pwa.js','/favicon.ico','/assets/icon-192.png'];
+      const allowed=['/sw.js','/offline','/styles.css','/theme.js','/theme.css','/pwa.css','/pwa.js','/favicon.ico','/assets/icon-192.png'];
       if(!allowed.includes(url.pathname))throw Error();
-      let content=await fs.readFile('.'+url.pathname);if(url.pathname==='/sw.js')content=Buffer.from(content.toString().replace('__NORTFOOD_RELEASE__',release));
-      res.writeHead(200,{'Content-Type':types[path.extname(url.pathname)],'Cache-Control':'no-cache'});res.end(content);
+      const file=url.pathname==='/offline'?'/offline.html':url.pathname;
+      let content=await fs.readFile('.'+file);if(url.pathname==='/sw.js')content=Buffer.from(content.toString().replace('__NORTFOOD_RELEASE__',release));
+      res.writeHead(200,{'Content-Type':types[path.extname(file)],'Cache-Control':'no-cache'});res.end(content);
     }catch{res.writeHead(404);res.end();}
   });
   await new Promise(r=>app.listen(0,'127.0.0.1',r));
@@ -25,6 +28,10 @@ test('PWA browser: install, update notice, draft preservation, activated new rel
     await page.evaluate(()=>fetch('/config.js'));await page.locator('[name=draft]').fill('Rascunho preservado');
     release='test-two';await page.evaluate(async()=>{await (await navigator.serviceWorker.getRegistration()).update()});
     await page.locator('.nf-pwa-update').waitFor();assert.equal(await page.locator('.nf-pwa-update span').innerText(),'Uma nova versão do NortFood está pronta.');assert.equal(await page.locator('[name=draft]').inputValue(),'Rascunho preservado');
+    // A pending update must stay below an existing application dialog.
+    await page.addStyleTag({url:origin+'/styles.css'});
+    await page.evaluate(()=>{const dialog=document.createElement('div');dialog.className='modal-scrim';dialog.innerHTML='<section role="dialog" aria-modal="true"><button id="pwa-dialog-close" type="button" style="position:fixed;right:20px;top:20px;min-width:44px;min-height:44px">Fechar diálogo</button></section>';dialog.querySelector('button').addEventListener('click',()=>dialog.remove());document.body.append(dialog)});
+    await page.locator('#pwa-dialog-close').click();assert.equal(await page.locator('#pwa-dialog-close').count(),0);
     await page.evaluate(()=>document.querySelector('form').setAttribute('aria-busy','true'));await page.locator('[data-apply-update]').click();
     assert.match(await page.locator('.nf-pwa-update small').innerText(),/Aguarde/);assert.equal(await page.locator('h1').innerText(),'test-one');
     await page.screenshot({path:path.join(folder,'pwa-update-mobile.png')});
@@ -32,7 +39,7 @@ test('PWA browser: install, update notice, draft preservation, activated new rel
     await Promise.all([page.waitForNavigation({waitUntil:'domcontentloaded'}),page.locator('[data-apply-update]').click()]);
     assert.equal(await page.locator('h1').innerText(),'test-two');assert.equal(await page.locator('html').getAttribute('data-theme'),'light');
     const cached=await page.evaluate(async()=>{const names=await caches.keys();return {names,paths:(await Promise.all(names.map(async name=>(await (await caches.open(name)).keys()).map(request=>new URL(request.url).pathname)))).flat()}});
-    assert.deepEqual(cached.names,['nortfood-public-test-two']);assert.equal(cached.paths.includes('/config.js'),false);assert.equal(cached.paths.includes('/'),false);
+    assert.deepEqual(cached.names,['nortfood-public-test-two']);assert.equal(cached.paths.includes('/offline.html'),true);assert.equal(cached.paths.includes('/config.js'),false);assert.equal(cached.paths.includes('/'),false);
     await context.setOffline(true);await page.reload();assert.equal(await page.locator('h1').innerText(),'Você está sem conexão');assert.equal(await page.locator('html').getAttribute('data-theme'),'light');assert.equal(await page.locator('#checkout-form').count(),0);
     await page.screenshot({path:path.join(folder,'pwa-offline-mobile.png')});
     await context.setOffline(false);await page.locator('a').click();assert.equal(await page.locator('h1').innerText(),'test-two');

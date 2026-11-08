@@ -26,6 +26,21 @@ test('PWA: config, JSON, private HTML, query strings, APIs and authenticated ass
   const response=await w.emit('fetch',{request:w.request('/app.js')});assert.equal(await response.text(),'private');
   assert.equal(await (await w.caches.open((await w.caches.keys())[0])).match('/app.js'),undefined);
 });
+test('PWA: Pages canonical offline fallback is cached without allowing other redirects',async()=>{
+  const w=worker(),calls=[];
+  w.network(async(file,options)=>{calls.push({file,options});const response=new Response('public offline');
+    if(file==='/offline.html')Object.defineProperties(response,{redirected:{value:true},url:{value:'https://nortfood.test/offline'}});
+    return response;
+  });
+  await w.emit('install');assert.equal(calls.filter(row=>row.file==='/offline').length,1);
+  assert.equal(calls.find(row=>row.file==='/offline').options.redirect,'error');
+  w.network(async()=>{throw Error('offline')});
+  assert.equal(await (await w.emit('fetch',{request:w.request('/',{mode:'navigate'})})).text(),'public offline');
+  const other=worker();other.network(async()=>{const response=new Response('redirect');Object.defineProperties(response,{redirected:{value:true},url:{value:'https://untrusted.example/offline'}});return response;});
+  await other.emit('install');other.network(async()=>{throw Error('offline')});
+  assert.equal((await other.emit('fetch',{request:other.request('/',{mode:'navigate'})})).status,503);
+});
+
 test('PWA: a new asset is fetched even when an old version is cached; offline uses only the latest public asset',async()=>{
   const w=worker();await w.emit('install');let version='one';w.network(async()=>new Response(version));
   assert.equal(await (await w.emit('fetch',{request:w.request('/app.js')})).text(),'one');version='two';
@@ -37,6 +52,15 @@ test('PWA: activation deletes only old NortFood caches and never forces update w
   const w=worker();await w.emit('install');await w.caches.open('nortfood-public-v1');await w.caches.open('another-app');await w.emit('activate');
   assert.equal((await w.caches.keys()).includes('nortfood-public-v1'),false);assert.ok((await w.caches.keys()).includes('another-app'));assert.equal(w.self.skipped,undefined);
   await w.emit('message',{data:{type:'SKIP_WAITING'}});assert.equal(w.self.skipped,true);
+});
+
+test('PWA: icon updates use current network bytes and never clear private browser storage',async()=>{
+  const w=worker();await w.emit('install');let version='previous-icon';w.network(async()=>new Response(version));
+  const request=w.request('/assets/icon-192.png');
+  assert.equal(await (await w.emit('fetch',{request})).text(),'previous-icon');version='current-icon';
+  assert.equal(await (await w.emit('fetch',{request})).text(),'current-icon');w.network(async()=>{throw Error('offline')});
+  assert.equal(await (await w.emit('fetch',{request})).text(),'current-icon');
+  const source=fs.readFileSync('sw.js','utf8');assert.doesNotMatch(source,/localStorage\.clear|sessionStorage\.clear|indexedDB\.deleteDatabase/);
 });
 test('PWA: cache failures never hide a successful network response',async()=>{
   const w=worker();w.caches.open=async()=>{throw Error('storage denied')};w.network(async()=>new Response('current'));

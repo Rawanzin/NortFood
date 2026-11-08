@@ -10,7 +10,9 @@
     document.documentElement.dataset.theme = theme;
     // Stop browser Auto Dark from repainting an explicitly selected light palette.
     document.querySelector('meta[name="color-scheme"]')?.setAttribute('content', 'only ' + theme);
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#18191c' : '#ffffff');
+    // A browser hint for native system chrome; Android/browser versions decide
+    // the actual system bar treatment and icon contrast.
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#000000' : '#ffffff');
     document.querySelectorAll('[data-brand-logo]').forEach(img => {
       const asset = new URL('assets/optimized/logo-' + theme + '.webp', location.href);
       asset.hash = ''; asset.search = '';
@@ -24,7 +26,7 @@
       button.textContent = theme === 'dark' ? '☀' : '☾';
     });
   }
-  window.NortFoodTheme = Object.freeze({sync});
+  window.NortFoodTheme = Object.freeze({sync,get:()=>['light','dark'].includes(preference)?preference:'system',set:value=>{if(!['light','dark','system'].includes(value))return;preference=value==='system'?null:value;try{if(preference)localStorage.setItem(key,preference);else localStorage.removeItem(key)}catch{}sync();}});
   sync();
   document.addEventListener('DOMContentLoaded', sync, {once:true});
   document.addEventListener('click', event => {

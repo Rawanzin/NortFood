@@ -1,8 +1,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.117.3';
 import { ImageMagick, initializeImageMagick, MagickFormat, ResourceLimits } from 'npm:@imagemagick/magick-wasm@0.0.44';
 import { boundedForm, inspectImage, sanitizeImage, configureDecoderLimits } from './media-validation.mjs';
-import { runtimeConfig, configuredOrigin } from './runtime-config.mjs';
-const allowedOrigin = configuredOrigin(Deno.env.get('APP_ORIGIN'));
+import { runtimeConfig, configuredOrigins, corsHeaders } from './runtime-config.mjs';
+const allowedOrigins = configuredOrigins(Deno.env.get('APP_ORIGINS'),Deno.env.get('APP_ORIGIN'));
 let decoder: Promise<void> | undefined;
 function initializeDecoder(){return decoder ||= Deno.readFile(new URL(import.meta.resolve('npm:@imagemagick/magick-wasm@0.0.44/magick.wasm'))).then(initializeImageMagick).then(()=>{
   configureDecoderLimits(ResourceLimits);
@@ -12,9 +12,9 @@ function initializeDecoder(){return decoder ||= Deno.readFile(new URL(import.met
 await initializeDecoder();
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get('origin');
-  const headers = { 'Access-Control-Allow-Origin': allowedOrigin || '', 'Access-Control-Allow-Headers': 'authorization,apikey,content-type,x-client-info', 'Access-Control-Allow-Methods': 'POST,OPTIONS', 'Vary': 'Origin' };
+  const headers = corsHeaders(origin,allowedOrigins);
   const reply = (status: number, message: string) => new Response(JSON.stringify({ error: message }), { status, headers: { ...headers, 'Content-Type': 'application/json' } });
-  if (!allowedOrigin || origin !== allowedOrigin) return reply(403, 'Origem não autorizada.');
+  if (!origin || !allowedOrigins.includes(origin)) return reply(403, 'Origem não autorizada.');
   if (req.method === 'OPTIONS') return new Response(null, { headers });
   if (req.method !== 'POST') return reply(405, 'Método inválido.');
   const authorization = req.headers.get('authorization') || '';

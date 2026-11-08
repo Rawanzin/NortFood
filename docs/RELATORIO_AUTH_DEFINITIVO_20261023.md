@@ -3,14 +3,14 @@
 **O cadastro público e o Google ainda não estão homologados para uso real.**
 As correções de código foram concluídas, enviadas ao GitHub e verificadas em uma prévia
 do site existente. **A produção não foi atualizada: o Netlify bloqueou o deploy por cota.**
-Pedidos comerciais continuam bloqueados, independentemente da autenticação.
+    "git.autofetch": true,am bloqueados, independentemente da autenticação.
 
 Foram auditados o site `https://nortfood.netlify.app`, o projeto Supabase principal
 `zwkhqahivthzivmuirjr` e a integração Netlify–GitHub `Rawanzin/NortFood`, branch
 `release/nortfood`. A produção anterior usava o commit público `61011c4` e a release
 `ec43a56032d791cc5b34`; não havia divergência de destino entre o frontend e o banco.
 
-As causas comprovadas foram:
+As causas comprovadas foram:  
 
 - Supabase Auth com novos cadastros desabilitados: chamada real devolveu HTTP 422,
   `signup_disabled`. O bloqueio acontece antes da criação do usuário.
@@ -27,7 +27,7 @@ As causas comprovadas foram:
 - Na primeira prévia HTTPS desta execução, o botão de mostrar a confirmação de senha
   alterava a senha principal. Corrigido e coberto por regressão de navegador.
 
-O Site URL já estava correto (`https://nortfood.netlify.app`), com redirects raiz
+O Site URL já estava correto (``), com redirects raiz
 com e sem barra final. Não foi alterado sem necessidade. A arquitetura usa o fluxo
 implicit do SDK para SPA estática, agora explícito: o SDK termina a leitura da sessão
 antes da consulta de identidade no servidor e antes do roteador consumir o fragmento.
@@ -118,7 +118,7 @@ Consequentemente, seus formulários e PWA ainda não receberam esta correção.
 
 Conta Netlify Free: ciclo exibido 20/10–19/11; 300 créditos consumidos por 20 deploys
 de produção, 303 créditos totais consumidos no painel. Restam 27,4 créditos operacionais
-de 30, exclusivamente para manter sites publicados no ar, indisponíveis para deploys.
+de 30, exclusivamente para manter sites publhttps://nortfood.netlify.appicados no ar, indisponíveis para deploys.
 Sem cartão cadastrado, sem faturas e sem compra de domínio. Nenhuma tentativa foi feita
 de contornar a pausa ou contratar plano pago. A alternativa gratuita é aguardar a
 renovação do ciclo e reexecutar o deploy do mesmo commit na mesma branch/site.

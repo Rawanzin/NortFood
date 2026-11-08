@@ -1,4 +1,32 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),{chromium}=require('playwright'),esbuild=require('esbuild'),{server}=require('../scripts/serve.cjs');
+test('Edição preserva vários grupos e ingredientes, permite novos grupos e remove somente o escolhido',async()=>{
+ const result=await esbuild.build({entryPoints:['src/backend.js'],bundle:true,write:false,format:'iife'});
+ const code=result.outputFiles[0].text+`;{
+  const api=window.NortFoodBackend,owner='10000000-0000-4000-8000-000000000002',store='10000000-0000-4000-8000-000000000001';
+  const catalog=[{id:store,name:'Loja sintética de edição',description:'Teste local',status:'draft',is_open:false,paused:true,street:'Rua sintética',number:'1',city:'Porteirinha',state:'MG',opens_at:'00:00',closes_at:'23:59',working_days:[0,1,2,3,4,5,6],pickup_enabled:false,delivery_enabled:false,payment_methods:[],minimum_cents:0,categories:[],zones:[],products:[{id:'20000000-0000-4000-8000-000000000001',name:'Lanche sintético',description:'Pão e queijo.',price_cents:800,category:'Lanches',available:false,ingredients:['Pão','Queijo'],groups:[{id:'group-a',name:'Ponto',min_choices:1,max_choices:1,options:[{id:'a',name:'Ao ponto',price_cents:0}]},{id:'group-b',name:'Complementos',min_choices:0,max_choices:2,options:[{id:'b',name:'Queijo extra',price_cents:350},{id:'c',name:'Bacon',price_cents:400}]}]}]}];
+  window.__productWrites=[];api.configured=true;api.initialize=async()=>{};
+  api.context=async()=>({profile:{id:owner,name:'Vendedor sintético',phone:'38999999999'},user:{id:owner,email:'seller@example.test'},memberships:[{store_id:store,member_role:'owner'}],onboarding:{seller:true,customer:true},is_admin:false});
+  api.load=async()=>({catalog,categories:[],snapshot:{},pilotEnabled:false,storeDrafts:[],storeSetups:[]});
+  api.rpc=async(name,args)=>{if(name==='nf_save_product')window.__productWrites.push(args);return 0;};api.image=async path=>path;
+ }`;
+ const app=await server({config:{mode:'commercial',publicAccounts:true}});await new Promise(r=>app.listen(0,'127.0.0.1',r));let browser;
+ try{
+  browser=await chromium.launch({channel:'chrome',headless:true});const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block'}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.route('**/assets/nortfood-backend.js',r=>r.fulfill({contentType:'text/javascript',body:code}));
+  await page.goto('http://127.0.0.1:'+app.address().port+'/#seller');await page.locator('.seller-shortcuts [data-tab=products]').click();await page.locator('[data-product-edit="0"]').click();
+  assert.equal(await page.locator('[data-product-option-group]').count(),2);assert.equal(await page.locator('[name=ingredients]').inputValue(),'Pão\nQueijo');
+  assert.equal(await page.locator('[name=extras]').inputValue(),'Ao ponto:0,00');assert.equal(await page.locator('[name="extras-1"]').inputValue(),'Queijo extra:3,50\nBacon:4,00');
+  await page.locator('[name=price]').fill('9.00');await page.locator('#product-form button[type=submit],#product-form > button.btn:not([type])').first().click();
+  await page.waitForFunction(()=>window.__productWrites.length===1);const saved=await page.evaluate(()=>window.__productWrites[0]);
+  assert.equal(saved.p_id,'20000000-0000-4000-8000-000000000001');assert.deepEqual(saved.p_data.ingredients,['Pão','Queijo']);assert.equal(saved.p_data.price_cents,900);
+  assert.deepEqual(saved.p_groups,[{name:'Ponto',min_choices:1,max_choices:1,options:[{name:'Ao ponto',price_cents:0}]},{name:'Complementos',min_choices:0,max_choices:2,options:[{name:'Queijo extra',price_cents:350},{name:'Bacon',price_cents:400}]}]);
+  await page.locator('[data-product-edit="0"]').click();await page.locator('[data-add-option-group]').click();assert.equal(await page.locator('[data-product-option-group]').count(),3);
+  await page.locator('[name="groupName-2"]').fill('Molhos');await page.locator('[name="extras-2"]').fill('Caseiro:2,00');await page.locator('[name="minChoices-2"]').fill('0');await page.locator('[name="maxChoices-2"]').fill('1');
+  await page.locator('[data-product-option-group]').nth(1).locator('[data-remove-option-group]').click();assert.equal(await page.locator('[data-product-option-group]').count(),2);
+  for(const width of [320,390,768]){await page.setViewportSize({width,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);}
+  await page.locator('#product-form > button.btn:not([type])').click();await page.waitForFunction(()=>window.__productWrites.length===2);const second=await page.evaluate(()=>window.__productWrites[1]);assert.deepEqual(second.p_groups.map(g=>g.name),['Ponto','Molhos']);assert.equal(second.p_groups[1].options[0].price_cents,200);assert.deepEqual(errors,[]);
+ }finally{await browser?.close();app.closeAllConnections();await new Promise(r=>app.close(r));}
+});
 test('Personalização no navegador: adicionais, remoções distintas, quantidade e persistência',async()=>{
  const code=(await esbuild.build({entryPoints:['src/backend.js'],bundle:true,write:false,format:'iife',plugins:[{name:'controlled-sdk',setup(b){b.onResolve({filter:/^@supabase\/supabase-js$/},()=>({path:'sdk',namespace:'fixture'}));b.onLoad({filter:/.*/,namespace:'fixture'},()=>({contents:'export const createClient=()=>window.__client;'}));}}]})).outputFiles[0].text;
  const app=await server({config:{mode:'commercial',supabaseUrl:'https://fixture.supabase.co',publishableKey:'sb_publishable_fixture',publicAccounts:true}});await new Promise(r=>app.listen(0,'127.0.0.1',r));let browser;

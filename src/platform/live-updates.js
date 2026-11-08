@@ -17,7 +17,7 @@ export function createLiveUpdates({client, getUser, notify, document, window, na
     const user = getUser();
     if (user) {
       channel = client.channel('nortfood-events-' + user.id);
-      for (const table of ['orders','messages','notifications','dining_tables']) {
+      for (const table of ['orders','messages','notifications','dining_tables','stores','delivery_zones']) {
         channel = channel.on('postgres_changes',{event:'*',schema:'public',table},() => refresh('DATABASE_CHANGE'));
       }
       channel.subscribe();

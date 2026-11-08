@@ -10,6 +10,10 @@ test('WhatsApp uses persisted cents and approved store, without address or notes
  assert.equal(url.hostname,'wa.me');assert.equal(url.pathname,'/5538999999999');assert.match(message,/34,50/);assert.match(message,/2× Lanche/);assert.match(message,/Queijo/);
  for(const secret of [order.address,order.notes,'Nota particular'])assert.ok(!message.includes(secret));
  assert.match(orderWhatsApp(order,store,{privateDetails:true}).message,/Rua privada/);
+ const complete={...order,raw:{...order.raw,subtotal_cents:3000,delivery_cents:450,customer_name:'Cliente sintético',customer_phone:'38999999999',address_snapshot:{reference:'Portão sintético'},items:[{quantity:2,name:'Lanche',total_cents:3000,options:[{name:'Queijo',price_cents:350}],removed_ingredients:['Cebola'],notes:'Nota particular'}]}};
+ const copied=orderWhatsApp(complete,store,{privateDetails:true}).message;
+ for(const detail of ['Subtotal:','30,00','Entrega:','4,50','3,50','Cliente sintético','38999999999','Portão sintético','Sem: Cebola','Nota particular'])assert.ok(copied.includes(detail),detail);
+ const publicMessage=new URL(orderWhatsApp(complete,store).url).searchParams.get('text');for(const detail of ['Cliente sintético','38999999999','Portão sintético','Nota particular'])assert.ok(!publicMessage.includes(detail));
  assert.equal(orderWhatsApp(order,{...store,id:'other'}),null);assert.equal(orderWhatsApp(order,{...store,status:'pending'}),null);assert.equal(orderWhatsApp({...order,raw:null},store),null);
  for(const phone of ['', '111', 'javascript:alert(1)', '5511000000000'])assert.equal(officialWhatsApp({...store,whatsapp:phone}),null);
  assert.equal(officialWhatsApp({...store,whatsapp:'+55 38 3333-4444'}),'553833334444');
@@ -33,7 +37,7 @@ test('Realtime lifecycle has no guest channel; identity changes, hidden tabs and
 test('PWA cancellation is remembered and incompatible iOS browser does not receive install banner',async()=>{
  const {chromium}=require('playwright'),http=require('node:http');
  const code=fs.readFileSync('pwa.js');
- const app=http.createServer((req,res)=>{res.setHeader('Content-Type',req.url==='/pwa.js'?'text/javascript':'text/html');res.end(req.url==='/pwa.js'?code:'<!doctype html><script defer src="/pwa.js"></script><h1>NortFood</h1>')});
+  const app=http.createServer((req,res)=>{res.setHeader('Content-Type',req.url==='/pwa.js'?'text/javascript':'text/html');res.end(req.url==='/pwa.js'?code:'<!doctype html><script defer src="/pwa.js"></script><h1>NortFood</h1><div data-pwa-home></div>')});
  await new Promise(r=>app.listen(0,'127.0.0.1',r));let browser;
  try{
   browser=await chromium.launch({channel:'chrome',headless:true});const page=await browser.newPage();await page.goto('http://127.0.0.1:'+app.address().port);

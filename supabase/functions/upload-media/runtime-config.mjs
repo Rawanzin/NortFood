@@ -1,5 +1,18 @@
 // Lido exclusivamente no servidor; nunca retornar ou registrar estes valores.
 export function configuredOrigin(value){try{const u=new URL(value);return u.origin===value&&!u.username&&!u.password&&(u.protocol==='https:'||u.protocol==='http:'&&['localhost','127.0.0.1'].includes(u.hostname))?u.origin:'';}catch{return '';}}
+// Allowlist exata: uma configuração inválida bloqueia todas as origens.
+// APP_ORIGIN permanece compatível com implantações que só possuem uma origem.
+export function configuredOrigins(value,legacy){
+ const raw=value===undefined||value===null||value===''?legacy:value;
+ if(typeof raw!=='string'||!raw.trim())return [];
+ const origins=raw.split(',').map(item=>item.trim());
+ if(origins.length>10||origins.some(origin=>!configuredOrigin(origin)))return [];
+ return [...new Set(origins)];
+}
+export function corsHeaders(origin,origins){
+ const allowed=typeof origin==='string'&&origins.includes(origin);
+ return {'Access-Control-Allow-Headers':'authorization,apikey,content-type,x-client-info','Access-Control-Allow-Methods':'POST,OPTIONS','Vary':'Origin',...(allowed?{'Access-Control-Allow-Origin':origin}:{})};
+}
 export function runtimeConfig(env){
  const key=(dictionary,legacy)=>{
   const raw=env.get(dictionary);

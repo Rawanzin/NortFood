@@ -11,6 +11,17 @@ test('Configuração de upload aceita chaves modernas/legadas e falha fechada',a
  assert.throws(()=>read({...modern,SUPABASE_SECRET_KEYS:'{}'}),/SERVER_CONFIGURATION_MISSING/);
  assert.throws(()=>read({...modern,SUPABASE_URL:modern.SUPABASE_URL+'/rest/v1'}),/SERVER_CONFIGURATION_INVALID/);
 });
+test('Upload CORS: Pages e Netlify usam allowlist exata, preservando origem legada',async()=>{
+ const {configuredOrigins,corsHeaders}=await import('../supabase/functions/upload-media/runtime-config.mjs');
+ const pages='https://nortfood.pages.dev',netlify='https://nortfood.netlify.app';
+ const origins=configuredOrigins(pages+', '+netlify,pages);
+ assert.deepEqual(origins,[pages,netlify]);assert.deepEqual(configuredOrigins(undefined,netlify),[netlify]);
+ assert.deepEqual(configuredOrigins(pages+','+pages),[pages]);
+ for(const raw of ['*',pages+',*',pages+',',pages+'/path','null','http://public.example','https://user:pass@fixture.example',new Array(12).fill(pages).join(',')])assert.deepEqual(configuredOrigins(raw,netlify),[]);
+ assert.deepEqual(configuredOrigins(undefined,undefined),[]);
+ for(const origin of origins){const headers=corsHeaders(origin,origins);assert.equal(headers['Access-Control-Allow-Origin'],origin);assert.equal(headers.Vary,'Origin');assert.equal(headers['Access-Control-Allow-Methods'],'POST,OPTIONS');assert.match(headers['Access-Control-Allow-Headers'],/authorization/);}
+ for(const origin of [null,'null','https://invalid.example',pages+'.evil.example',pages+'/',pages.toUpperCase()])assert.equal(corsHeaders(origin,origins)['Access-Control-Allow-Origin'],undefined);
+});
 test('Imagens: decode WASM real, MIME, truncamento, pixels e multipart limitado',async()=>{
  const magick=await import('@imagemagick/magick-wasm'),{ImageMagick,MagickFormat,MagickColors}=magick;
  await magick.initializeImageMagick(await fs.readFile(require.resolve('@imagemagick/magick-wasm/magick.wasm')));

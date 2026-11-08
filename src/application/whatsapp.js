@@ -14,15 +14,21 @@ export function orderWhatsApp(order, store, {privateDetails = false} = {}) {
       !Number.isSafeInteger(raw.total_cents) || raw.total_cents < 0 || !Array.isArray(raw.items)) return null;
   const lines = ['Pedido NortFood #' + raw.id, store.name];
   for (const item of raw.items) {
-    lines.push(item.quantity + '× ' + item.name);
-    for (const option of item.options || []) lines.push('  + ' + option.name);
+    lines.push(item.quantity + '× ' + item.name + (privateDetails && Number.isSafeInteger(item.total_cents) ? ' — ' + money(item.total_cents) : ''));
+    for (const option of item.options || []) lines.push('  + ' + option.name + (privateDetails && Number.isSafeInteger(option.price_cents) ? ' (' + money(option.price_cents) + ' cada)' : ''));
     if (privateDetails && item.removed_ingredients?.length) lines.push('  Sem: ' + item.removed_ingredients.join(', '));
     if (privateDetails && item.notes) lines.push('  Observação: ' + item.notes);
   }
+  if (privateDetails && Number.isSafeInteger(raw.subtotal_cents)) lines.push('Subtotal: ' + money(raw.subtotal_cents));
+  if (privateDetails && Number.isSafeInteger(raw.delivery_cents)) lines.push('Entrega: ' + money(raw.delivery_cents));
   lines.push('Total registrado: ' + money(raw.total_cents), 'Pagamento: ' + order.payment);
   lines.push(raw.fulfillment === 'delivery' ? 'Entrega' : raw.fulfillment === 'dine_in' ? 'Na mesa' : 'Retirada');
   if (privateDetails) {
+    if (raw.customer_name) lines.push('Cliente: ' + raw.customer_name);
+    if (raw.customer_phone) lines.push('Contato: ' + raw.customer_phone);
+    if (raw.fulfillment === 'dine_in' && raw.table_snapshot?.label) lines.push('Mesa: ' + raw.table_snapshot.label);
     if (order.address) lines.push('Destino: ' + order.address);
+    if (raw.address_snapshot?.reference) lines.push('Referência: ' + raw.address_snapshot.reference);
     if (order.notes) lines.push('Observações: ' + order.notes);
   }
   lines.push('Aguardo a confirmação da loja no NortFood.');

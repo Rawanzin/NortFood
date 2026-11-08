@@ -21,7 +21,13 @@ const cacheable = response => response.ok && !response.redirected &&
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_VERSION).then(cache => Promise.all(SHELL.map(async file => {
-    const response = await fetch(file, {cache: 'reload'});
+    let response = await fetch(file, {cache: 'reload'});
+    // Pages serves HTML at extensionless canonical paths. Refetch only this
+    // known public fallback; redirected or private responses stay excluded.
+    if (file === '/offline.html' && response.redirected &&
+        response.url === new URL('/offline', self.location.origin).href) {
+      response = await fetch('/offline', {cache: 'reload', redirect: 'error'});
+    }
     if (!response.ok) throw new Error('Public shell unavailable');
     if (cacheable(response)) await cache.put(file, response);
   }))));

@@ -9,6 +9,7 @@ test('Interface comercial usa UUIDs, preço revisado e RPC; mantém painel/check
  const root=path.resolve(__dirname,'..');const server=http.createServer(async(req,res)=>{try{
  if(req.url==='/ui-fixture'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify({catalog,snapshot,categories:[{id:'a1000000-0000-4000-8000-000000000001',name:'Lanches'}]}));return}
  if(req.url==='/ui-rpc'){let body='';for await(const chunk of req)body+=chunk;const {name,args}=JSON.parse(body);calls.push({name,args});let result=null;
+ if(name==='nf_catalog')result=catalog;
  if(name==='nf_order_history')result=args.p_before?[]:Array.from({length:50},(_,i)=>({...snapshot.orders[0],id:'70000000-0000-4000-8000-'+String(99-i).padStart(12,'0'),created_at:'2026-01-01T12:00:00.123456+00:00'}));
  if(name==='nf_admin_dashboard')result={stores:catalog,categories:[{id:'a1000000-0000-4000-8000-000000000001',name:'Lanches',active:true}],settings:{commission_rate_bps:500},requests:[{id:'b1000000-0000-4000-8000-000000000001',kind:'access',status:'pending'}],audit:[{action:'store_status',created_at:new Date().toISOString()}]};
  if(name==='nf_update_profile')profilePhone=args.p_phone;

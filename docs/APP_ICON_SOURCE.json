@@ -1,0 +1,36 @@
+{
+  "source": "assets/app-icon-original.png",
+  "sourceSHA256": "495b1f5590a7fdd76a953b7ae503020925f3ba015d0b78a2e1933bb46a2c2997",
+  "sourceWidth": 499,
+  "sourceHeight": 488,
+  "existingBrand": false,
+  "requestedAttachmentUsed": true,
+  "background": "transparent",
+  "manifestBackground": "#ffffff",
+  "icons": [
+    {
+      "src": "/assets/app-icons/icon-192-6799c1e313dd.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/app-icons/icon-192-maskable-6534b9974a1e.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/assets/app-icons/icon-512-9508e4a89664.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/app-icons/icon-512-maskable-62af1b4df822.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
