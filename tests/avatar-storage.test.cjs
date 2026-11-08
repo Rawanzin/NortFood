@@ -29,7 +29,7 @@ test('Avatar SQL: migração aditiva preserva catálogo46/20/220, isola leitura/
    (select jsonb_agg(to_jsonb(o) order by id) from public.product_options o) options,
    (select to_jsonb(b) from storage.buckets b where id='store-media') media`)).rows[0];assert.deepEqual(after,before);
   const a=randomUUID(),b=randomUUID(),pathA=a+'/'+randomUUID()+'.webp',pathA2=a+'/'+randomUUID()+'.webp',pathB=b+'/'+randomUUID()+'.webp';
-  for(const id of [a,b])await db.query('insert into auth.users values($1,$2)',[id,{name:'Avatar sintético'}]);
+  for(const id of [a,b])await db.query('insert into auth.users(id,raw_user_meta_data) values($1,$2)',[id,{name:'Avatar sintético'}]);
   for(const path of [pathA,pathA2,pathB,a+'/../'+randomUUID()+'.webp'])await db.query("insert into storage.objects(bucket_id,name) values('profile-avatars',$1)",[path]);
   await db.exec(`grant usage on schema storage to anon,authenticated,service_role;grant select,insert,update,delete on storage.objects to anon,authenticated,service_role;
    create policy future_avatar_permissive on storage.objects for all to anon,authenticated using(true) with check(true);`);
