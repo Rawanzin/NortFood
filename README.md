@@ -1,4 +1,4 @@
-> Atualização de 23/10/2026: [NortFood público](https://nortfood.netlify.app) e PWA publicados no Netlify Free. Cadastros e pedidos reais continuam bloqueados. Consulte o [relatório atual de lançamento](docs/LANCAMENTO_OFICIAL_20261023.md); afirmações anteriores sobre ausência de hospedagem são históricas.
+**Operação de lançamento — 08/11/2026.** O site oficial é [nortfood.pages.dev](https://nortfood.pages.dev). Consulte o [status de lançamento](docs/STATUS_LANCAMENTO.md) para conferir a versão publicada, a candidata local, as provas e os bloqueios. As notas datadas abaixo são históricas.
 
 ## Modernização arquitetural — 21/10/2026
 
