@@ -66,6 +66,18 @@ test('Snapshot refuses mismatched identities and never exposes a snapshot to a g
   const guest=snapshotView(null,{snapshot:{orders:[{secret:true}],addresses:[{secret:true}]}},null);
   assert.equal(guest.current,null);assert.equal(guest.orders.length,0);assert.equal(guest.address,undefined);
 });
+test('Revoking store access drops its cached orders and chooses the next allowed store',async()=>{
+  const {snapshotView}=await load('src/application/snapshot.js');
+  const context={profile:{id:'seller'},user:{id:'seller'},memberships:[{store_id:'suspended',can_manage:false},{store_id:'allowed'}]};
+  const history=[
+    {id:'stale',store:'suspended',raw:{customer_id:'buyer'}},
+    {id:'allowed-order',store:'allowed',raw:{customer_id:'buyer'}},
+    {id:'own',store:'other',raw:{customer_id:'seller'}},
+  ];
+  const result=snapshotView(context,{}, {id:'seller',storeId:'suspended'},history);
+  assert.equal(result.current.storeId,'allowed');
+  assert.deepEqual(Array.from(result.orders,row=>row.id),['allowed-order','own']);
+});
 test('HTTP: signal already aborted is forwarded as aborted before starting the request',async()=>{
   const source=(await esbuild.build({entryPoints:['src/platform/http.js'],bundle:true,format:'cjs',write:false})).outputFiles[0].text;
   const scope={module:{exports:{}},exports:{},AbortController,setTimeout,clearTimeout,fetch:async(url,options)=>{assert.equal(options.signal.aborted,true);throw new DOMException('Aborted','AbortError')}};

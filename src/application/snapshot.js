@@ -6,6 +6,7 @@ export function snapshotView(context, loaded, previous, history = []) {
   if (context && (!profile?.id || profile.id !== context.user?.id || !Array.isArray(context.memberships))) {
     throw new Error('Não foi possível validar a identidade. Entre novamente.');
   }
+  const managedStores = new Set(context?.memberships.filter(row => row.can_manage !== false).map(row => row.store_id));
   const current = context ? {
     ...profile,
     email: context.user.email,
@@ -15,7 +16,7 @@ export function snapshotView(context, loaded, previous, history = []) {
     customerOnboarded: !!context.onboarding?.customer,
     sellerOnboarded: !!context.onboarding?.seller,
     role: context.is_admin ? 'admin' : context.memberships.length ? 'seller' : 'customer',
-    storeId: context.memberships.some(row => row.store_id === previous?.storeId) ? previous.storeId : context.memberships[0]?.store_id,
+    storeId: managedStores.has(previous?.storeId) ? previous.storeId : managedStores.values().next().value,
   } : null;
   const snapshot = current ? loaded.snapshot || {} : {};
   const sameOwner = !!current && previous?.id === current.id;
@@ -24,7 +25,7 @@ export function snapshotView(context, loaded, previous, history = []) {
   const latest = (snapshot.orders || []).map(row => orderView(row, current));
   return {
     current, address, latest,
-    orders: [...latest, ...(sameOwner ? history.filter(row => !latest.some(next => next.id === row.id)) : [])],
+    orders: [...latest, ...(sameOwner ? history.filter(row => (context.is_admin || row.raw?.customer_id === current.id || managedStores.has(row.store)) && !latest.some(next => next.id === row.id)) : [])],
     commissionLedger: snapshot.ledger || [],
     commissionSettlements: snapshot.settlements || [],
     notifications: (snapshot.notifications || []).map(row => ({ id:row.id, email:current?.email, read:!!row.read_at, title:row.title, text:statusNames[row.body] || row.body, created:Date.parse(row.created_at) })),

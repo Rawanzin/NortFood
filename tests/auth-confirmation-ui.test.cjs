@@ -19,10 +19,10 @@ test('Expiração e indisponibilidade têm mensagens úteis sem ecoar dados da U
 
 test('Template PT-BR mantém o destino Supabase original e o assunto solicitado',async()=>{
  const template=await fs.readFile('supabase/templates/confirmation.html','utf8'),config=await fs.readFile('supabase/config.toml','utf8');
- for(const copy of ['Confirme seu endereço de e-mail','Olá!','Sua conta no NortFood está quase pronta.','Para concluir seu cadastro e começar a utilizar nossa plataforma, confirme seu endereço de e-mail clicando no botão abaixo.','CONFIRMAR MEU E-MAIL','Se o botão não funcionar, utilize o link de confirmação abaixo.','Se você não criou uma conta no NortFood, pode ignorar esta mensagem.'])assert.ok(template.includes(copy));
+ for(const copy of ['Confirme seu endereço de e-mail','Olá!','Sua conta no NortFood está quase pronta.','Para concluir seu cadastro e começar a utilizar nossa plataforma, confirme seu endereço de e-mail clicando no botão abaixo.','Confirmar e-mail','Se o botão não funcionar, utilize o link de confirmação abaixo.','Se você não criou uma conta no NortFood, pode ignorar esta mensagem.'])assert.ok(template.includes(copy));
  assert.match(config,/\[auth\.email\.template\.confirmation\]\s*subject = "Confirme seu e-mail — NortFood"/);
  const links=[...template.matchAll(/<a\b[^>]*href="([^"]+)"/g)].map(match=>match[1]);assert.deepEqual(links,['{{ .ConfirmationURL }}','{{ .ConfirmationURL }}']);assert.equal((template.match(/\{\{ \.ConfirmationURL \}\}/g)||[]).length,3);
- assert.match(template,/<a href="\{\{ \.ConfirmationURL \}\}"[^>]*background-color:#1769e0[^>]*>CONFIRMAR MEU E-MAIL<\/a>/);
+ assert.match(template,/<a href="\{\{ \.ConfirmationURL \}\}"[^>]*background-color:#1769e0[^>]*>Confirmar e-mail<\/a>/);
  assert.match(template,/src="https:\/\/nortfood\.pages\.dev\/assets\/logo-light\.png"/);assert.doesNotMatch(template,/<script|<form|\.TokenHash|\.Token\s*\}\}|redirect_to=|access_token=/i);
 });
 

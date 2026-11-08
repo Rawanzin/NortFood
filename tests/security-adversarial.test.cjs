@@ -3,16 +3,17 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs/promises'),{randomUUID}=require('node:crypto'),{PGlite}=require('@electric-sql/pglite');
 const securityMigration='202610310015_security_audit.sql';
+const accessMigration='202611080017_store_access.sql';
 test('Etapa 10: autorização e manipulação financeira em banco descartável',async t=>{
  const db=new PGlite();await db.waitReady;
  try{
   await db.exec(`create role anon nologin;create role authenticated nologin;create role service_role nologin bypassrls;
-   create schema auth;create table auth.users(id uuid primary key,email text,email_confirmed_at timestamptz,raw_user_meta_data jsonb not null default '{}');
+   create schema auth;create table auth.users(id uuid primary key,banned_until timestamptz,email text,email_confirmed_at timestamptz,raw_user_meta_data jsonb not null default '{}');
    create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
    grant usage on schema auth to anon,authenticated;grant execute on function auth.uid() to anon,authenticated;
    create schema storage;create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
    create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text,name text);alter table storage.objects enable row level security;`);
-  for(const file of (await fs.readdir('supabase/migrations')).filter(f=>f.endsWith('.sql')&&f!==securityMigration).sort())await db.exec(await fs.readFile('supabase/migrations/'+file,'utf8'));
+  for(const file of (await fs.readdir('supabase/migrations')).filter(f=>f.endsWith('.sql')&&f!==securityMigration&&f!==accessMigration).sort())await db.exec(await fs.readFile('supabase/migrations/'+file,'utf8'));
   const ids={admin:randomUUID(),a:randomUUID(),b:randomUUID(),sellerA:randomUUID(),sellerB:randomUUID()};
   for(const [name,id]of Object.entries(ids))await db.query('insert into auth.users(id,email,raw_user_meta_data) values($1,$2,$3)',[id,name+'@example.test',{name:'Pessoa sintética '+name,role:'admin',is_admin:true,phone:'38999999999',terms_version:'2026-10-public-v2'}]);
   await db.query('insert into private.admin_users(user_id) values($1)',[ids.admin]);
@@ -58,6 +59,36 @@ test('Etapa 10: autorização e manipulação financeira em banco descartável',
    assert.equal(await as(ids.b,()=>call('nf_claim_store_invitation')),0);
    assert.equal((await db.query('select count(*)::int n from public.store_memberships where store_id=$1',[reserved])).rows[0].n,0);
    assert.equal((await db.query('select claimed_by from private.store_invitations where store_id=$1',[reserved])).rows[0].claimed_by,null);
+  });
+  await t.test('Suspensão e banimento revogam gestão, pedidos e mídia na sessão já aberta',async()=>{
+   await as(ids.admin,()=>call('nf_admin_store',[storeB,'suspended','Teste de revogação']));
+   await as(ids.sellerB,()=>call('nf_set_store_open',[storeB,true,false]));
+   const beforeAccess=await snapshot();
+   await db.exec(await fs.readFile('supabase/migrations/'+accessMigration,'utf8'));
+   assert.deepEqual(await snapshot(),beforeAccess);
+   async function rejectManagement(id,store,name){
+    await denied(id,()=>call('nf_set_store_open',[store,true,false]),/STORE_FORBIDDEN/);
+    await denied(id,()=>call('nf_set_fulfillment',[store,false,false]),/STORE_FORBIDDEN/);
+    await denied(id,()=>call('nf_save_store_draft',[store,{},0]),/STORE_FORBIDDEN/);
+    await denied(id,()=>call('nf_complete_seller',['Pessoa teste',name,'38999999999',true]),/STORE_FORBIDDEN/);
+    assert.equal((await as(id,()=>call('nf_context'))).memberships.find(row=>row.store_id===store).can_manage,false);
+    assert.ok(!(await as(id,()=>call('nf_store_drafts'))).some(row=>row.store_id===store));
+    await db.exec('set role service_role');
+    try{await assert.rejects(()=>call('nf_reserve_media_upload',[store,id,100]),/STORE_FORBIDDEN/);}
+    finally{await db.exec('reset role');}
+   }
+   await rejectManagement(ids.sellerB,storeB,'Loja Sintética B');
+   assert.equal((await db.query('select count(*)::int n from public.store_memberships where store_id=$1',[storeB])).rows[0].n,1);
+   assert.ok((await as(ids.admin,()=>call('nf_catalog'))).some(store=>store.id===storeB));
+   await as(ids.admin,()=>call('nf_admin_store',[storeB,'approved','Reativação de teste']));
+   await as(ids.sellerB,()=>call('nf_set_store_open',[storeB,true,false]));
+
+   await db.query("update auth.users set banned_until=now()+interval '1 hour' where id=$1",[ids.sellerA]);
+   await rejectManagement(ids.sellerA,storeA,'Loja Sintética A');
+   await denied(ids.sellerA,()=>call('nf_transition',[order,'accepted',0,'']),/ORDER_FORBIDDEN/);
+   assert.ok(!(await as(ids.sellerA,()=>call('nf_snapshot'))).orders.some(row=>row.id===order));
+   await db.query("update auth.users set banned_until=now()-interval '1 second' where id=$1",[ids.sellerA]);
+   await as(ids.sellerA,()=>call('nf_set_store_open',[storeA,true,false]));
   });
   await t.test('RLS habilitado em todas tabelas públicas/privadas e objetos Storage',async()=>{
    const rows=(await db.query("select n.nspname,c.relname,c.relrowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace where c.relkind='r' and (n.nspname in('public','private') or n.nspname='storage' and c.relname='objects')")).rows;

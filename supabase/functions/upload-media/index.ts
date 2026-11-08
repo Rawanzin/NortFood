@@ -39,6 +39,7 @@ Deno.serve(async (req: Request) => {
   // Reserva atômica no banco: falhas de decode/upload consomem a tentativa;
   // não abre escrita direta nem depende de contadores locais da Edge Function.
   const quota=await admin.rpc('nf_reserve_media_upload',{p_store:store,p_user:user.id,p_bytes:bytes.length});
+  if(quota.error?.message==='STORE_FORBIDDEN')return reply(403,'Sem permissão para esta loja.');
   if(quota.error)return reply(quota.error.message==='UPLOAD_LIMIT'?429:503,quota.error.message==='UPLOAD_LIMIT'?'Limite de imagens atingido. Aguarde ou contate o suporte.':'Não foi possível autorizar o envio da imagem.');
   let sanitized:Uint8Array;
   try{await initializeDecoder();}catch{decoder=undefined;return reply(503,'Processamento de imagens indisponível. Tente novamente mais tarde.');}
